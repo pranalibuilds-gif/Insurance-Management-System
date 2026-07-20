@@ -13,6 +13,14 @@ const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
 const CustomerDashboard = lazy(() => import('../pages/portal/CustomerDashboard'));
+const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
+const ProfileOverview = lazy(() => import('../pages/portal/profile/ProfileOverview'));
+const PersonalInformation = lazy(() => import('../pages/portal/profile/PersonalInformation'));
+const AddressInformation = lazy(() => import('../pages/portal/profile/AddressInformation'));
+const NomineeManagement = lazy(() => import('../pages/portal/profile/NomineeManagement'));
+const ProfileDocuments = lazy(() => import('../pages/portal/profile/ProfileDocuments'));
+const SecurityInformation = lazy(() => import('../pages/portal/profile/SecurityInformation'));
+const ActivityHistory = lazy(() => import('../pages/portal/profile/ActivityHistory'));
 const UnauthorizedPage = lazy(() => import('../pages/error/UnauthorizedPage'));
 
 // Placeholder components
@@ -72,7 +80,17 @@ export const AppRoutes: React.FC = () => {
           <Route path="billing" element={<div>Payment History</div>} />
           <Route path="documents" element={<div>My Documents</div>} />
           <Route path="notifications" element={<div>All Notifications</div>} />
-          <Route path="profile" element={<div>Profile Settings</div>} />
+
+          {/* Profile Workspace */}
+          <Route path="profile" element={<ProfileLayout />}>
+            <Route index element={<ProfileOverview />} />
+            <Route path="personal" element={<PersonalInformation />} />
+            <Route path="address" element={<AddressInformation />} />
+            <Route path="nominees" element={<NomineeManagement />} />
+            <Route path="documents" element={<ProfileDocuments />} />
+            <Route path="security" element={<SecurityInformation />} />
+            <Route path="activity" element={<ActivityHistory />} />
+          </Route>
         </Route>
 
         {/* Staff Routes */}
