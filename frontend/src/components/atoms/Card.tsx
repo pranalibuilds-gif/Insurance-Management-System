@@ -2,30 +2,45 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  padding?: 'none' | 'sm' | 'md' | 'lg';
+  variant?: 'default' | 'outlined' | 'elevated';
 }
 
-export const Card = React.forwardRef<HTMLDivElement, CardProps>(
-  ({ className, padding = 'md', ...props }, ref) => {
-    const paddings = {
-      none: 'p-0',
-      sm: 'p-4',
-      md: 'p-6',
-      lg: 'p-8',
+const CardRoot = React.forwardRef<HTMLDivElement, CardProps>(
+  ({ className, variant = 'default', ...props }, ref) => {
+    const variants = {
+      default: 'border border-neutral-100 bg-white shadow-soft',
+      outlined: 'border border-neutral-200 bg-white',
+      elevated: 'border border-neutral-100 bg-white shadow-md',
     };
 
     return (
       <div
         ref={ref}
-        className={cn(
-          'rounded-2xl border border-slate-100 bg-white shadow-soft',
-          paddings[padding],
-          className
-        )}
+        className={cn('rounded-xl overflow-hidden', variants[variant], className)}
         {...props}
       />
     );
   }
 );
+CardRoot.displayName = 'Card';
 
-Card.displayName = 'Card';
+const CardHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('px-6 py-4 border-b border-neutral-50 bg-neutral-50/30', className)} {...props} />
+);
+CardHeader.displayName = 'Card.Header';
+
+const CardContent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('p-6', className)} {...props} />
+);
+CardContent.displayName = 'Card.Content';
+
+const CardFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+  <div className={cn('px-6 py-4 border-t border-neutral-50 bg-neutral-50/10', className)} {...props} />
+);
+CardFooter.displayName = 'Card.Footer';
+
+export const Card = Object.assign(CardRoot, {
+  Header: CardHeader,
+  Content: CardContent,
+  Footer: CardFooter,
+});
