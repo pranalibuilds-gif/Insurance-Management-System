@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { useAuth } from '../../context/AuthContext';
+import { mockLogin } from '../../mocks/auth';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
@@ -31,23 +32,11 @@ export const LoginForm: React.FC = () => {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      // Mock login logic
-      // In a real app, this would call an API
-      console.log('Logging in with:', data);
-
-      // Simulate API delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      // Determine role based on email for testing purposes
-      let role: 'ADMIN' | 'MANAGER' | 'AGENT' | 'CUSTOMER' = 'CUSTOMER';
-      if (data.email.startsWith('admin')) role = 'ADMIN';
-      else if (data.email.startsWith('manager')) role = 'MANAGER';
-      else if (data.email.startsWith('agent')) role = 'AGENT';
-
-      login(data.email, role);
+      const userData = await mockLogin(data.email);
+      login(userData);
       toast.success('Successfully logged in!');
 
-      if (role === 'CUSTOMER') {
+      if (userData.role === 'CUSTOMER') {
         navigate('/portal/dashboard');
       } else {
         navigate('/staff/dashboard');

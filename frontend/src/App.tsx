@@ -1,12 +1,15 @@
 import React from 'react';
 import { AppProvider } from './providers/AppProvider';
 import { AppRoutes } from './routes';
+import ErrorBoundary from './components/organisms/ErrorBoundary';
 
 const App: React.FC = () => {
   return (
-    <AppProvider>
-      <AppRoutes />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppRoutes />
+      </AppProvider>
+    </ErrorBoundary>
   );
 };
 

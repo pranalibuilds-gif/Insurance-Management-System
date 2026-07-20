@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: 'success' | 'warning' | 'danger' | 'info' | 'neutral';
+  variant?: 'success' | 'warning' | 'danger' | 'info' | 'neutral' | 'brand';
   size?: 'sm' | 'md';
 }
 
@@ -18,6 +18,7 @@ export const Badge = ({
     danger: 'bg-danger-50 text-danger-700 border-danger-500/10',
     info: 'bg-info-50 text-info-700 border-info-500/10',
     neutral: 'bg-neutral-100 text-neutral-700 border-neutral-200',
+    brand: 'bg-brand-50 text-brand-700 border-brand-500/10',
   };
 
   const sizes = {

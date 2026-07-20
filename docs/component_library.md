@@ -71,3 +71,25 @@ This document tracks the usage and API for the core atom components of the Insur
 ## 7. StatCard
 **Purpose**: Dashboard visual for displaying key performance indicators.
 - **Props**: `label`, `value`, `icon`, `trend` (percentage + direction).
+
+---
+
+# Shared UI Component Library - Organisms
+
+## 1. Sidebar
+**Purpose**: Primary application navigation.
+- **Features**: Collapsible, Nested items, Role-based items, Active route tracking.
+- **Logic**: Configuration-driven via `NavigationConfig`.
+
+## 2. Topbar
+**Purpose**: Global header providing context and utility actions.
+- **Features**: Breadcrumbs, Global search (optional), Notifications bell, User profile.
+
+## 3. DataTable
+**Purpose**: Standardized data display for lists.
+- **Features**: Sorting, Pagination, Loading states (Skeletons), Empty states.
+- **Generic**: Type-safe column accessors.
+
+## 4. Modal
+**Purpose**: Overlay for focused tasks or information.
+- **Features**: Backdrop blur, Transition animations, Header/Footer slots, Focus trapping (standard behavior).
