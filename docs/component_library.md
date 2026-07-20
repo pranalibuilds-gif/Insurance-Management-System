@@ -35,3 +35,39 @@ This document tracks the usage and API for the core atom components of the Insur
   - `centered`: Flex container for full-width sections.
   - `fullscreen`: Overlay for entire page transitions.
 - **Sizes**: `sm`, `md`, `lg`.
+
+---
+
+# Shared UI Component Library - Molecules
+
+## 1. FormField
+**Purpose**: High-level wrapper for form elements providing consistent label, helper text, and error states.
+- **Props**: `label`, `helperText`, `error`, `isRequired`.
+- **Logic**: Automatically handles ARIA attributes and links child inputs to their labels.
+
+## 2. Alert
+**Purpose**: Inline messaging for status updates or validations.
+- **Variants**: `success`, `warning`, `danger`, `info`.
+- **Props**: `title`, `onClose`, `children`.
+- **Logic**: Includes preset Lucide icons for each variant.
+
+## 3. SearchBar
+**Purpose**: Standard search input with icon and clear action.
+- **Props**: `onSearch`, `onClear`, `onChange`.
+
+## 4. Breadcrumb
+**Purpose**: Secondary navigation showing the user's location in the hierarchy.
+- **Props**: `items` (label, href).
+- **Logic**: Automatically prepends a Home link.
+
+## 5. PageHeader
+**Purpose**: Standard layout block for the top of every page.
+- **Props**: `title`, `description`, `actions`.
+
+## 6. EmptyState
+**Purpose**: Descriptive placeholder for views with no data.
+- **Props**: `icon`, `title`, `description`, `action` (Primary button).
+
+## 7. StatCard
+**Purpose**: Dashboard visual for displaying key performance indicators.
+- **Props**: `label`, `value`, `icon`, `trend` (percentage + direction).

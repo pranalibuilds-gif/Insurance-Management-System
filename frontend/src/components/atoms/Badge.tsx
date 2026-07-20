@@ -28,7 +28,7 @@ export const Badge = ({
   return (
     <div
       className={cn(
-        'inline-flex items-center rounded-full border font-semibold transition-colors uppercase tracking-wider',
+        'inline-flex items-center rounded-full border font-semibold transition-colors tracking-wide',
         variants[variant],
         sizes[size],
         className
