@@ -8,16 +8,20 @@ import { Badge } from '../../../components/atoms/Badge';
 import { Spinner } from '../../../components/atoms/Spinner';
 import { Alert } from '../../../components/molecules/Alert';
 import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
+import { DataTable, Column } from '../../../components/organisms/DataTable';
+import { FileDropzone } from '../../../components/molecules/FileDropzone';
 import { getProductById } from '../../../mocks/products';
 import { getCustomerProfile } from '../../../mocks/customers';
+import { getDocuments } from '../../../mocks/documents';
 import {
   saveDraft,
   getDraft,
   calculatePremiumSnapshot,
   evaluateEligibility,
-  generatePurchaseReference
+  generatePurchaseReference,
+  mapNomineeToPurchase
 } from '../../../features/purchase/wizardStore';
-import { PurchaseDraft, StepStatus } from '../../../types/wizard';
+import { PurchaseDraft, StepStatus, PurchaseNominee, PurchaseDocumentReference } from '../../../types/wizard';
 import {
   CheckCircle2,
   ChevronRight,
@@ -28,7 +32,10 @@ import {
   CreditCard,
   AlertCircle,
   ClipboardCheck,
-  Zap
+  Zap,
+  Plus,
+  Trash2,
+  Paperclip
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import toast from 'react-hot-toast';
@@ -61,6 +68,11 @@ const PurchaseWizard: React.FC = () => {
     queryFn: getCustomerProfile,
   });
 
+  const { data: userDocuments } = useQuery({
+    queryKey: ['documents'],
+    queryFn: getDocuments,
+  });
+
   useEffect(() => {
     const savedDraft = getDraft();
     if (savedDraft && savedDraft.productId === productId && !savedDraft.isComplete) {
@@ -73,7 +85,7 @@ const PurchaseWizard: React.FC = () => {
         coverageAmount: product.minCoverage,
         premiumFrequency: product.premiumFrequencies[0],
         selectedNominees: [],
-        selectedDocumentIds: {},
+        attachedDocuments: [],
         currentStep: 1,
         stepStatuses: { 1: 'IN_PROGRESS' },
         purchaseReference: generatePurchaseReference(),
@@ -84,7 +96,6 @@ const PurchaseWizard: React.FC = () => {
     }
   }, [product, productId]);
 
-  // Snapshot logic whenever state changes
   useEffect(() => {
     if (draft && product && customer) {
       const pricing = calculatePremiumSnapshot(draft.coverageAmount, draft.premiumFrequency);
@@ -102,7 +113,7 @@ const PurchaseWizard: React.FC = () => {
         saveDraft(updated);
       }
     }
-  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees.length, product, customer]);
+  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees, draft?.attachedDocuments, product, customer]);
 
   const handleNext = () => {
     if (currentStep < steps.length) {
@@ -121,7 +132,31 @@ const PurchaseWizard: React.FC = () => {
     }
   };
 
+  const toggleNominee = (nominee: any) => {
+    if (!draft) return;
+    const isSelected = draft.selectedNominees.some(n => n.id === nominee.id);
+    if (isSelected) {
+      setDraft({ ...draft, selectedNominees: draft.selectedNominees.filter(n => n.id !== nominee.id) });
+    } else {
+      setDraft({ ...draft, selectedNominees: [...draft.selectedNominees, mapNomineeToPurchase(nominee)] });
+    }
+  };
+
+  const attachDocument = (doc: any, type: string) => {
+    if (!draft) return;
+    const newRef: PurchaseDocumentReference = {
+      documentId: doc.id,
+      documentType: type,
+      version: doc.currentVersion,
+      verificationStatus: doc.status,
+      fileName: doc.versions[0].fileName,
+    };
+    setDraft({ ...draft, attachedDocuments: [...draft.attachedDocuments.filter(d => d.documentType !== type), newRef] });
+  };
+
   if (isLoadingProduct || !draft || !product) return <Spinner variant="centered" />;
+
+  const totalNomineeShare = draft.selectedNominees.reduce((acc, n) => acc + n.sharePercentage, 0);
 
   return (
     <div className="max-w-6xl mx-auto space-y-8 animate-entrance pb-20">
@@ -130,7 +165,7 @@ const PurchaseWizard: React.FC = () => {
         description={`Reference: ${draft.purchaseReference}`}
       />
 
-      {/* Modern Stepper */}
+      {/* Stepper */}
       <div className="flex items-center justify-between px-4 bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm overflow-x-auto">
         {steps.map((step, index) => {
           const Icon = step.icon;
@@ -236,19 +271,106 @@ const PurchaseWizard: React.FC = () => {
                   </Alert>
                   <EligibilitySummary
                     eligibility={product.eligibility}
-                    customerAge={35} // Mock age from customer profile
+                    customerAge={35}
                     isKYCVerified={customer?.kycStatus === 'VERIFIED'}
-                    hasDocuments={Object.keys(draft.selectedDocumentIds).length > 0}
+                    hasDocuments={draft.attachedDocuments.length > 0}
                   />
-                  {!draft.eligibilitySnapshot?.overallStatus && (
+                </div>
+              )}
+
+              {currentStep === 4 && (
+                <div className="space-y-6 animate-entrance">
+                  <div className="flex justify-between items-center">
+                    <h4 className="font-bold text-neutral-900">Select Policy Nominees</h4>
+                    <Badge variant={totalNomineeShare === 100 ? 'success' : 'warning'}>
+                      Allocation: {totalNomineeShare}%
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 gap-4">
+                    {customer?.nominees.map(n => {
+                      const isSelected = draft.selectedNominees.some(sn => sn.id === n.id);
+                      return (
+                        <div
+                          key={n.id}
+                          onClick={() => toggleNominee(n)}
+                          className={cn(
+                            "p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between",
+                            isSelected ? "border-brand-600 bg-brand-50" : "border-neutral-100 hover:border-neutral-200"
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={cn("h-5 w-5 rounded-full border-2 flex items-center justify-center", isSelected ? "border-brand-600 bg-brand-600 text-white" : "border-neutral-300")}>
+                              {isSelected && <CheckCircle2 className="h-3 w-3" />}
+                            </div>
+                            <div>
+                              <p className="font-bold text-neutral-900">{n.fullName}</p>
+                              <p className="text-xs text-neutral-500">{n.relationship} • {n.sharePercentage}% Share</p>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {totalNomineeShare !== 100 && (
                     <Alert variant="warning">
-                      Please ensure all eligibility requirements are met before proceeding to payment.
+                      Total nominee allocation must equal exactly 100%. Current: {totalNomineeShare}%
                     </Alert>
                   )}
                 </div>
               )}
 
-              {currentStep > 3 && (
+              {currentStep === 5 && (
+                <div className="space-y-8 animate-entrance">
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-neutral-900">Required Documents</h4>
+                    <p className="text-sm text-neutral-500">Attach existing documents from your vault or upload new ones.</p>
+                  </div>
+
+                  <div className="space-y-4">
+                    {product.requiredDocuments.map(reqDoc => {
+                      const attached = draft.attachedDocuments.find(d => d.documentType === reqDoc);
+                      const available = userDocuments?.find(d => d.title.toLowerCase().includes(reqDoc.toLowerCase()) || d.category.toLowerCase().includes(reqDoc.toLowerCase()));
+
+                      return (
+                        <Card key={reqDoc} variant="outlined">
+                          <Card.Content className="p-5 flex items-center justify-between">
+                            <div className="flex items-center gap-4">
+                              <div className={cn("p-2.5 rounded-xl", attached ? "bg-success-50 text-success-600" : "bg-neutral-100 text-neutral-400")}>
+                                <FileText className="h-5 w-5" />
+                              </div>
+                              <div>
+                                <p className="font-bold text-neutral-900">{reqDoc}</p>
+                                {attached ? (
+                                  <p className="text-xs text-success-600 flex items-center gap-1 font-medium">
+                                    <CheckCircle2 className="h-3 w-3" /> Attached: {attached.fileName}
+                                  </p>
+                                ) : (
+                                  <p className="text-xs text-neutral-400">Not attached</p>
+                                )}
+                              </div>
+                            </div>
+
+                            <div className="flex gap-2">
+                              {!attached && available && (
+                                <Button size="sm" variant="outline" onClick={() => attachDocument(available, reqDoc)}>
+                                  <Paperclip className="h-4 w-4 mr-2" /> Use Existing
+                                </Button>
+                              )}
+                              <Button size="sm" variant={attached ? 'ghost' : 'outline'} className={attached ? 'text-neutral-400' : ''}>
+                                {attached ? 'Replace' : 'Upload New'}
+                              </Button>
+                            </div>
+                          </Card.Content>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {currentStep > 5 && (
                 <div className="py-20 text-center space-y-4">
                    <div className="h-20 w-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto text-neutral-300">
                       <Spinner size="lg" />
@@ -263,14 +385,21 @@ const PurchaseWizard: React.FC = () => {
             <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
               <ChevronLeft className="h-4 w-4 mr-2" /> Previous Step
             </Button>
-            <Button onClick={handleNext} disabled={currentStep === steps.length}>
+            <Button
+              onClick={handleNext}
+              disabled={
+                currentStep === steps.length ||
+                (currentStep === 4 && totalNomineeShare !== 100) ||
+                (currentStep === 5 && !draft.eligibilitySnapshot?.hasRequiredDocuments)
+              }
+            >
               {currentStep === 6 ? 'Proceed to Payment' : currentStep === 7 ? 'Authorize' : 'Save & Continue'}
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
 
-        {/* Dynamic Pricing Sidebar */}
+        {/* Sidebar Summary */}
         <div className="space-y-6 lg:sticky lg:top-24">
           <Card className="bg-neutral-900 text-white border-none shadow-xl">
             <Card.Header className="border-white/10 bg-white/5">
@@ -287,24 +416,24 @@ const PurchaseWizard: React.FC = () => {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-6 border-t border-white/10">
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-neutral-500">Coverage</span>
-                  <span>${draft.coverageAmount.toLocaleString()}</span>
-                </div>
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-neutral-500">Frequency</span>
-                  <span>{draft.premiumFrequency}</span>
-                </div>
-                <div className="flex justify-between text-xs font-medium">
-                  <span className="text-neutral-500">Tax (18%)</span>
-                  <span>${draft.pricingSnapshot?.taxes.toLocaleString()}</span>
+              <div className="space-y-4 pt-6 border-t border-white/10">
+                <div className="space-y-2">
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Eligibility</p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Profile Verified</span>
+                    {draft.eligibilitySnapshot?.isKYCVerified ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <AlertCircle className="h-3.5 w-3.5 text-warning-500" />}
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Nominees (100%)</span>
+                    {draft.eligibilitySnapshot?.hasNomineesAllocated ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
+                  </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-neutral-400">Documents</span>
+                    {draft.eligibilitySnapshot?.hasRequiredDocuments ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
+                  </div>
                 </div>
               </div>
             </Card.Content>
-            <Card.Footer className="border-white/10 bg-white/5 text-center">
-               <p className="text-[10px] text-neutral-500 italic">Values are based on your current selection.</p>
-            </Card.Footer>
           </Card>
         </div>
       </div>

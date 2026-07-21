@@ -1,6 +1,6 @@
-import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot } from '../../types/wizard';
+import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot, PurchaseNominee } from '../../types/wizard';
 import { InsuranceProduct } from '../../types/product';
-import { Customer } from '../../types/customer';
+import { Customer, Nominee } from '../../types/customer';
 
 const STORAGE_KEY = 'imp_purchase_draft';
 
@@ -39,6 +39,18 @@ export const calculatePremiumSnapshot = (amount: number, frequency: string): Pri
   };
 };
 
+export const mapNomineeToPurchase = (nominee: Nominee): PurchaseNominee => {
+  const age = new Date().getFullYear() - new Date(nominee.dob).getFullYear();
+  return {
+    id: nominee.id,
+    fullName: nominee.fullName,
+    relationship: nominee.relationship,
+    dob: nominee.dob,
+    sharePercentage: nominee.sharePercentage,
+    isMinor: age < 18,
+  };
+};
+
 export const evaluateEligibility = (
   product: InsuranceProduct,
   customer: Customer,
@@ -54,8 +66,10 @@ export const evaluateEligibility = (
 
   const isCoverageValid = draft.coverageAmount >= product.minCoverage && draft.coverageAmount <= product.maxCoverage;
 
-  // Placeholder for document check logic
-  const hasRequiredDocuments = Object.keys(draft.selectedDocumentIds).length >= product.requiredDocuments.length;
+  // Document check: every required product document must be attached
+  const hasRequiredDocuments = product.requiredDocuments.every(reqDoc =>
+    draft.attachedDocuments.some(attDoc => attDoc.documentType.toLowerCase().includes(reqDoc.toLowerCase()) || attDoc.fileName.toLowerCase().includes(reqDoc.toLowerCase()))
+  );
 
   return {
     isAgeEligible,

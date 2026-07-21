@@ -19,14 +19,32 @@ export interface EligibilitySnapshot {
   overallStatus: boolean;
 }
 
+export interface PurchaseNominee {
+  id: string;
+  fullName: string;
+  relationship: string;
+  dob: string;
+  sharePercentage: number;
+  isMinor: boolean;
+  guardianName?: string;
+}
+
+export interface PurchaseDocumentReference {
+  documentId: string;
+  documentType: string;
+  version: number;
+  verificationStatus: string;
+  fileName: string;
+}
+
 export interface PurchaseDraft {
   productId: string;
   coverageAmount: number;
   premiumFrequency: PremiumFrequency;
 
   // Snapshots (Copied from master data)
-  selectedNominees: Nominee[];
-  selectedDocumentIds: Record<string, string>; // Maps document category/type to doc ID
+  selectedNominees: PurchaseNominee[];
+  attachedDocuments: PurchaseDocumentReference[];
 
   pricingSnapshot?: PricingSnapshot;
   eligibilitySnapshot?: EligibilitySnapshot;
