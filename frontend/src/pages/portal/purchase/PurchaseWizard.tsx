@@ -6,10 +6,18 @@ import { Button } from '../../../components/atoms/Button';
 import { Card } from '../../../components/atoms/Card';
 import { Badge } from '../../../components/atoms/Badge';
 import { Spinner } from '../../../components/atoms/Spinner';
+import { Alert } from '../../../components/molecules/Alert';
+import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
 import { getProductById } from '../../../mocks/products';
 import { getCustomerProfile } from '../../../mocks/customers';
-import { saveDraft, getDraft, clearDraft, calculatePremium } from '../../../features/purchase/wizardStore';
-import { PurchaseDraft } from '../../../types/wizard';
+import {
+  saveDraft,
+  getDraft,
+  calculatePremiumSnapshot,
+  evaluateEligibility,
+  generatePurchaseReference
+} from '../../../features/purchase/wizardStore';
+import { PurchaseDraft, StepStatus } from '../../../types/wizard';
 import {
   CheckCircle2,
   ChevronRight,
@@ -18,22 +26,22 @@ import {
   Users,
   FileText,
   CreditCard,
-  AlertCircle
+  AlertCircle,
+  ClipboardCheck,
+  Zap
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import toast from 'react-hot-toast';
 
-// Steps components would be imported here
-// For now we will implement logic in one file and refactor if needed
-
 const steps = [
-  { id: 1, title: 'Plan', icon: Shield },
-  { id: 2, title: 'Coverage', icon: CreditCard },
-  { id: 3, title: 'Nominees', icon: Users },
-  { id: 4, title: 'Documents', icon: FileText },
-  { id: 5, title: 'Review', icon: AlertCircle },
-  { id: 6, title: 'Payment', icon: CreditCard },
-  { id: 7, title: 'Confirmation', icon: CheckCircle2 },
+  { id: 1, title: 'Product', icon: Shield },
+  { id: 2, title: 'Coverage', icon: Zap },
+  { id: 3, title: 'Eligibility', icon: ClipboardCheck },
+  { id: 4, title: 'Nominees', icon: Users },
+  { id: 5, title: 'Documents', icon: FileText },
+  { id: 6, title: 'Review', icon: AlertCircle },
+  { id: 7, title: 'Payment', icon: CreditCard },
+  { id: 8, title: 'Confirm', icon: CheckCircle2 },
 ];
 
 const PurchaseWizard: React.FC = () => {
@@ -58,15 +66,17 @@ const PurchaseWizard: React.FC = () => {
     if (savedDraft && savedDraft.productId === productId && !savedDraft.isComplete) {
       setDraft(savedDraft);
       setCurrentStep(savedDraft.currentStep);
-      toast('Welcome back! We restored your progress.', { icon: '👋' });
+      toast('Resumed your purchase progress.', { icon: '🔄' });
     } else if (product) {
       const initialDraft: PurchaseDraft = {
         productId: product.id,
         coverageAmount: product.minCoverage,
         premiumFrequency: product.premiumFrequencies[0],
-        selectedNomineeIds: [],
-        uploadedDocumentIds: [],
+        selectedNominees: [],
+        selectedDocumentIds: {},
         currentStep: 1,
+        stepStatuses: { 1: 'IN_PROGRESS' },
+        purchaseReference: generatePurchaseReference(),
         lastSaved: new Date().toISOString(),
         isComplete: false,
       };
@@ -74,65 +84,81 @@ const PurchaseWizard: React.FC = () => {
     }
   }, [product, productId]);
 
+  // Snapshot logic whenever state changes
+  useEffect(() => {
+    if (draft && product && customer) {
+      const pricing = calculatePremiumSnapshot(draft.coverageAmount, draft.premiumFrequency);
+      const eligibility = evaluateEligibility(product, customer, draft);
+
+      const updated = {
+        ...draft,
+        pricingSnapshot: pricing,
+        eligibilitySnapshot: eligibility,
+        lastSaved: new Date().toISOString()
+      };
+
+      if (JSON.stringify(updated) !== JSON.stringify(draft)) {
+        setDraft(updated);
+        saveDraft(updated);
+      }
+    }
+  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees.length, product, customer]);
+
   const handleNext = () => {
     if (currentStep < steps.length) {
       const nextStep = currentStep + 1;
+      const updatedStatuses = { ...draft?.stepStatuses, [currentStep]: 'COMPLETED' as StepStatus, [nextStep]: 'IN_PROGRESS' as StepStatus };
       setCurrentStep(nextStep);
       if (draft) {
-        const updated = { ...draft, currentStep: nextStep, lastSaved: new Date().toISOString() };
-        setDraft(updated);
-        saveDraft(updated);
+        setDraft({ ...draft, currentStep: nextStep, stepStatuses: updatedStatuses });
       }
     }
   };
 
   const handleBack = () => {
     if (currentStep > 1) {
-      const prevStep = currentStep - 1;
-      setCurrentStep(prevStep);
+      setCurrentStep(currentStep - 1);
     }
   };
 
   if (isLoadingProduct || !draft || !product) return <Spinner variant="centered" />;
 
-  const premium = calculatePremium(draft.coverageAmount, draft.premiumFrequency);
-
   return (
-    <div className="max-w-5xl mx-auto space-y-8 animate-entrance pb-20">
+    <div className="max-w-6xl mx-auto space-y-8 animate-entrance pb-20">
       <PageHeader
-        title={`Purchase: ${product.name}`}
-        description="Follow the steps below to secure your insurance coverage."
+        title={product.name}
+        description={`Reference: ${draft.purchaseReference}`}
       />
 
-      {/* Stepper */}
-      <div className="flex items-center justify-between px-2 overflow-x-auto scrollbar-hide">
+      {/* Modern Stepper */}
+      <div className="flex items-center justify-between px-4 bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm overflow-x-auto">
         {steps.map((step, index) => {
           const Icon = step.icon;
+          const status = draft.stepStatuses[step.id] || 'NOT_STARTED';
           const isActive = currentStep === step.id;
-          const isCompleted = currentStep > step.id;
 
           return (
             <React.Fragment key={step.id}>
-              <div className="flex flex-col items-center gap-2 group min-w-[80px]">
+              <div className="flex flex-col items-center gap-2 min-w-[70px]">
                 <div className={cn(
                   'h-10 w-10 rounded-full flex items-center justify-center transition-all border-2',
                   isActive ? 'bg-brand-600 border-brand-600 text-white ring-4 ring-brand-100' :
-                  isCompleted ? 'bg-success-500 border-success-500 text-white' :
+                  status === 'COMPLETED' ? 'bg-success-500 border-success-500 text-white' :
                   'bg-white border-neutral-200 text-neutral-400'
                 )}>
-                  {isCompleted ? <CheckCircle2 className="h-6 w-6" /> : <Icon className="h-5 w-5" />}
+                  {status === 'COMPLETED' ? <CheckCircle2 className="h-6 w-6" /> : <Icon className="h-5 w-5" />}
                 </div>
                 <span className={cn(
-                  'text-[10px] font-bold uppercase tracking-widest transition-colors',
-                  isActive ? 'text-brand-600' : isCompleted ? 'text-success-600' : 'text-neutral-400'
+                  'text-[10px] font-bold uppercase tracking-widest',
+                  isActive ? 'text-brand-600' : status === 'COMPLETED' ? 'text-success-600' : 'text-neutral-400'
                 )}>
                   {step.title}
                 </span>
               </div>
               {index < steps.length - 1 && (
                 <div className={cn(
-                  'flex-1 h-0.5 min-w-[20px] mx-2 -mt-6 transition-colors',
-                  currentStep > step.id ? 'bg-success-500' : 'bg-neutral-100'
+                  'flex-1 h-0.5 min-w-[15px] mx-2 -mt-6',
+                  draft.stepStatuses[step.id] === 'COMPLETED' ? 'bg-success-500' : 'bg-neutral-100'
                 )} />
               )}
             </React.Fragment>
@@ -140,42 +166,36 @@ const PurchaseWizard: React.FC = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Step Content */}
-        <div className="lg:col-span-2 space-y-6">
-          <Card className="min-h-[400px]">
-            <Card.Header>
-              <h3 className="text-xl font-bold text-neutral-900">
-                Step {currentStep}: {steps[currentStep - 1].title}
-              </h3>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
+        <div className="lg:col-span-3 space-y-6">
+          <Card className="min-h-[450px]">
+            <Card.Header className="flex justify-between items-center">
+              <h3 className="text-xl font-bold text-neutral-900">{steps[currentStep-1].title}</h3>
+              <Badge variant="info">Step {currentStep} of {steps.length}</Badge>
             </Card.Header>
             <Card.Content>
               {currentStep === 1 && (
-                 <div className="space-y-6 animate-entrance">
-                    <div className="bg-brand-50 p-6 rounded-2xl border border-brand-100 flex gap-4">
+                <div className="space-y-6 animate-entrance">
+                   <div className="bg-brand-50 p-6 rounded-2xl border border-brand-100 flex gap-4">
                       <Shield className="h-10 w-10 text-brand-600 shrink-0" />
                       <div>
                         <h4 className="font-bold text-neutral-900">{product.name}</h4>
-                        <p className="text-sm text-neutral-600 leading-relaxed">{product.shortDescription}</p>
+                        <p className="text-sm text-neutral-600">{product.shortDescription}</p>
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50/50">
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Category</p>
-                        <p className="text-sm font-bold text-neutral-900">{product.category}</p>
-                      </div>
-                      <div className="p-4 rounded-xl border border-neutral-100 bg-neutral-50/50">
-                        <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Waiting Period</p>
-                        <p className="text-sm font-bold text-neutral-900">{product.waitingPeriodDays} Days</p>
-                      </div>
-                    </div>
-                 </div>
+                    <Alert variant="info">
+                      You are currently configuring this plan. You can change your product selection back in the catalogue.
+                    </Alert>
+                </div>
               )}
 
               {currentStep === 2 && (
-                <div className="space-y-8 animate-entrance">
-                  <div className="space-y-4">
-                    <label className="text-sm font-bold text-neutral-700">Coverage Amount: ${draft.coverageAmount.toLocaleString()}</label>
+                <div className="space-y-10 animate-entrance">
+                  <div className="space-y-6">
+                    <div className="flex justify-between items-end">
+                      <label className="text-sm font-bold text-neutral-700 uppercase tracking-wider">Coverage Amount</label>
+                      <span className="text-2xl font-black text-brand-600">${draft.coverageAmount.toLocaleString()}</span>
+                    </div>
                     <input
                       type="range"
                       min={product.minCoverage}
@@ -183,23 +203,19 @@ const PurchaseWizard: React.FC = () => {
                       step={50000}
                       value={draft.coverageAmount}
                       onChange={(e) => setDraft({...draft, coverageAmount: Number(e.target.value)})}
-                      className="w-full h-2 bg-neutral-100 rounded-lg appearance-none cursor-pointer accent-brand-600"
+                      className="w-full h-3 bg-neutral-100 rounded-lg appearance-none cursor-pointer accent-brand-600"
                     />
-                    <div className="flex justify-between text-xs text-neutral-400 font-bold">
-                      <span>Min: ${product.minCoverage.toLocaleString()}</span>
-                      <span>Max: ${product.maxCoverage.toLocaleString()}</span>
-                    </div>
                   </div>
 
                   <div className="space-y-4">
-                    <label className="text-sm font-bold text-neutral-700">Premium Frequency</label>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <label className="text-sm font-bold text-neutral-700 uppercase tracking-wider">Payment Frequency</label>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       {product.premiumFrequencies.map(freq => (
                         <button
                           key={freq}
                           onClick={() => setDraft({...draft, premiumFrequency: freq})}
                           className={cn(
-                            "px-4 py-3 rounded-xl border-2 text-xs font-bold transition-all",
+                            "px-4 py-4 rounded-xl border-2 text-xs font-bold transition-all",
                             draft.premiumFrequency === freq
                               ? "border-brand-600 bg-brand-50 text-brand-700"
                               : "border-neutral-100 text-neutral-400 hover:border-neutral-200"
@@ -213,85 +229,82 @@ const PurchaseWizard: React.FC = () => {
                 </div>
               )}
 
-              {currentStep > 2 && (
+              {currentStep === 3 && (
+                <div className="space-y-6 animate-entrance">
+                  <Alert variant="info" title="Pre-Purchase Validation">
+                    Our system is verifying your eligibility for the {product.name} based on your profile and selected coverage.
+                  </Alert>
+                  <EligibilitySummary
+                    eligibility={product.eligibility}
+                    customerAge={35} // Mock age from customer profile
+                    isKYCVerified={customer?.kycStatus === 'VERIFIED'}
+                    hasDocuments={Object.keys(draft.selectedDocumentIds).length > 0}
+                  />
+                  {!draft.eligibilitySnapshot?.overallStatus && (
+                    <Alert variant="warning">
+                      Please ensure all eligibility requirements are met before proceeding to payment.
+                    </Alert>
+                  )}
+                </div>
+              )}
+
+              {currentStep > 3 && (
                 <div className="py-20 text-center space-y-4">
-                   <div className="h-16 w-16 bg-neutral-50 rounded-full flex items-center justify-center mx-auto text-neutral-300">
-                      <Spinner size="md" />
+                   <div className="h-20 w-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto text-neutral-300">
+                      <Spinner size="lg" />
                    </div>
-                   <p className="text-neutral-500 font-medium italic">Implementing Logic for {steps[currentStep-1].title}...</p>
+                   <p className="text-neutral-500 font-medium italic">Building Step: {steps[currentStep-1].title}...</p>
                 </div>
               )}
             </Card.Content>
           </Card>
 
-          {/* Navigation Controls */}
-          <div className="flex items-center justify-between pt-4">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 1 || currentStep === steps.length}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" /> Back
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
+              <ChevronLeft className="h-4 w-4 mr-2" /> Previous Step
             </Button>
             <Button onClick={handleNext} disabled={currentStep === steps.length}>
-              {currentStep === 5 ? 'Proceed to Payment' : currentStep === 6 ? 'Finalize' : 'Continue'}
+              {currentStep === 6 ? 'Proceed to Payment' : currentStep === 7 ? 'Authorize' : 'Save & Continue'}
               <ChevronRight className="h-4 w-4 ml-2" />
             </Button>
           </div>
         </div>
 
-        {/* Sidebar Summary */}
+        {/* Dynamic Pricing Sidebar */}
         <div className="space-y-6 lg:sticky lg:top-24">
-          <Card className="bg-neutral-900 text-white border-none shadow-xl shadow-brand-900/10">
+          <Card className="bg-neutral-900 text-white border-none shadow-xl">
             <Card.Header className="border-white/10 bg-white/5">
-              <h4 className="font-bold">Premium Estimate</h4>
+              <h4 className="font-bold uppercase tracking-widest text-[10px] text-neutral-400">Policy Snapshot</h4>
             </Card.Header>
             <Card.Content className="p-6 space-y-6">
               <div className="text-center">
+                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Estimated Premium</p>
                 <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-black text-white">${premium.totalAmount.toLocaleString()}</span>
-                  <span className="text-neutral-400 text-sm font-bold">/{draft.premiumFrequency.toLowerCase()}</span>
+                  <span className="text-4xl font-black text-white">
+                    ${draft.pricingSnapshot?.totalAmount.toLocaleString()}
+                  </span>
+                  <span className="text-neutral-500 text-xs font-bold">/{draft.premiumFrequency.toLowerCase()}</span>
                 </div>
-                <p className="text-neutral-500 text-[10px] mt-1 uppercase tracking-widest font-bold italic">Inc. 18% GST</p>
               </div>
 
-              <div className="space-y-3 pt-4 border-t border-white/10">
+              <div className="space-y-3 pt-6 border-t border-white/10">
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-neutral-400">Base Premium</span>
-                  <span>${premium.baseAmount.toLocaleString()}</span>
+                  <span className="text-neutral-500">Coverage</span>
+                  <span>${draft.coverageAmount.toLocaleString()}</span>
                 </div>
                 <div className="flex justify-between text-xs font-medium">
-                  <span className="text-neutral-400">Taxes & Fees</span>
-                  <span>${premium.taxes.toLocaleString()}</span>
+                  <span className="text-neutral-500">Frequency</span>
+                  <span>{draft.premiumFrequency}</span>
+                </div>
+                <div className="flex justify-between text-xs font-medium">
+                  <span className="text-neutral-500">Tax (18%)</span>
+                  <span>${draft.pricingSnapshot?.taxes.toLocaleString()}</span>
                 </div>
               </div>
             </Card.Content>
-          </Card>
-
-          <Card>
-            <Card.Header>
-              <h4 className="font-bold text-neutral-900">Eligibility Status</h4>
-            </Card.Header>
-            <Card.Content className="p-4 space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-2 w-2 rounded-full bg-success-500" />
-                <span className="text-xs font-medium text-neutral-600">KYC Verified</span>
-              </div>
-              <div className={cn(
-                "flex items-center gap-3",
-                currentStep >= 3 ? "text-success-600" : "text-neutral-400"
-              )}>
-                <div className={cn("h-2 w-2 rounded-full", currentStep >= 3 ? "bg-success-500" : "bg-neutral-200")} />
-                <span className="text-xs font-medium">Nominees Assigned</span>
-              </div>
-              <div className={cn(
-                "flex items-center gap-3",
-                currentStep >= 4 ? "text-success-600" : "text-neutral-400"
-              )}>
-                <div className={cn("h-2 w-2 rounded-full", currentStep >= 4 ? "bg-success-500" : "bg-neutral-200")} />
-                <span className="text-xs font-medium">Documents Uploaded</span>
-              </div>
-            </Card.Content>
+            <Card.Footer className="border-white/10 bg-white/5 text-center">
+               <p className="text-[10px] text-neutral-500 italic">Values are based on your current selection.</p>
+            </Card.Footer>
           </Card>
         </div>
       </div>

@@ -1,4 +1,6 @@
-import { PurchaseDraft } from '../../types/wizard';
+import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot } from '../../types/wizard';
+import { InsuranceProduct } from '../../types/product';
+import { Customer } from '../../types/customer';
 
 const STORAGE_KEY = 'imp_purchase_draft';
 
@@ -15,7 +17,7 @@ export const clearDraft = () => {
   localStorage.removeItem(STORAGE_KEY);
 };
 
-export const calculatePremium = (amount: number, frequency: string) => {
+export const calculatePremiumSnapshot = (amount: number, frequency: string): PricingSnapshot => {
   const baseRate = 0.001; // 0.1% of coverage
   let freqMultiplier = 1;
 
@@ -33,6 +35,38 @@ export const calculatePremium = (amount: number, frequency: string) => {
     baseAmount: Math.round(baseAmount),
     taxes: Math.round(taxes),
     totalAmount: Math.round(baseAmount + taxes),
-    frequency
+    frequency: frequency as any
   };
+};
+
+export const evaluateEligibility = (
+  product: InsuranceProduct,
+  customer: Customer,
+  draft: PurchaseDraft
+): EligibilitySnapshot => {
+  const customerAge = new Date().getFullYear() - new Date(customer.dob).getFullYear();
+
+  const isAgeEligible = customerAge >= product.eligibility.minAge && customerAge <= product.eligibility.maxAge;
+  const isKYCVerified = customer.kycStatus === 'VERIFIED';
+
+  const totalNomineeShare = draft.selectedNominees.reduce((acc, n) => acc + n.sharePercentage, 0);
+  const hasNomineesAllocated = totalNomineeShare === 100;
+
+  const isCoverageValid = draft.coverageAmount >= product.minCoverage && draft.coverageAmount <= product.maxCoverage;
+
+  // Placeholder for document check logic
+  const hasRequiredDocuments = Object.keys(draft.selectedDocumentIds).length >= product.requiredDocuments.length;
+
+  return {
+    isAgeEligible,
+    isKYCVerified,
+    hasRequiredDocuments,
+    hasNomineesAllocated,
+    isCoverageValid,
+    overallStatus: isAgeEligible && isKYCVerified && hasRequiredDocuments && hasNomineesAllocated && isCoverageValid
+  };
+};
+
+export const generatePurchaseReference = () => {
+  return `PUR-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 };
