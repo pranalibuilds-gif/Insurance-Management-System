@@ -36,6 +36,15 @@ This document tracks the usage and API for the core atom components of the Insur
   - `fullscreen`: Overlay for entire page transitions.
 - **Sizes**: `sm`, `md`, `lg`.
 
+## 6. Select
+**Purpose**: Standardized dropdown selection.
+- **Props**: `options`, `label`, `error`, `placeholder`.
+
+## 7. Avatar
+**Purpose**: Circular user profile representation.
+- **Props**: `src`, `name`, `size`.
+- **Logic**: Automatically generates initials if no source is provided.
+
 ---
 
 # Shared UI Component Library - Molecules
@@ -71,6 +80,14 @@ This document tracks the usage and API for the core atom components of the Insur
 ## 7. StatCard
 **Purpose**: Dashboard visual for displaying key performance indicators.
 - **Props**: `label`, `value`, `icon`, `trend` (percentage + direction).
+
+## 8. FileDropzone
+**Purpose**: Interactive file selection interface.
+- **Features**: Drag and Drop support, File validation (size/type), Preview of selected file.
+
+## 9. LoadingSkeleton
+**Purpose**: Placeholder for data-intensive views.
+- **Variants**: `table`, `cards`, `list`.
 
 ---
 

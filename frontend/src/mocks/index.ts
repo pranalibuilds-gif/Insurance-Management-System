@@ -8,4 +8,5 @@
 export const mockDelay = (ms = 800) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export * from './auth';
+export * from './documents';
 // ... export other domains as they are populated

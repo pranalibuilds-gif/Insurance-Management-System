@@ -13,6 +13,7 @@ const RegisterPage = lazy(() => import('../pages/auth/RegisterPage'));
 const ForgotPasswordPage = lazy(() => import('../pages/auth/ForgotPasswordPage'));
 const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
 const CustomerDashboard = lazy(() => import('../pages/portal/CustomerDashboard'));
+const DocumentCenter = lazy(() => import('../pages/portal/documents/DocumentCenter'));
 const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
 const ProfileOverview = lazy(() => import('../pages/portal/profile/ProfileOverview'));
 const PersonalInformation = lazy(() => import('../pages/portal/profile/PersonalInformation'));
@@ -78,7 +79,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="policies" element={<div>My Policies</div>} />
           <Route path="claims" element={<div>My Claims</div>} />
           <Route path="billing" element={<div>Payment History</div>} />
-          <Route path="documents" element={<div>My Documents</div>} />
+          <Route path="documents" element={<DocumentCenter />} />
           <Route path="notifications" element={<div>All Notifications</div>} />
 
           {/* Profile Workspace */}
