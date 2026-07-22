@@ -10,6 +10,7 @@ import { Shield, Clock, FileCheck } from 'lucide-react';
 import { getCustomerProfile } from '../../mocks/customers';
 import { getCustomerPolicies } from '../../mocks/policies';
 import { getCustomerClaims } from '../../mocks/claims';
+import { Policy } from '../../types/policy';
 
 const CustomerDashboard: React.FC = () => {
   const { data: customer, isLoading: isLoadingCustomer } = useQuery({
@@ -24,8 +25,8 @@ const CustomerDashboard: React.FC = () => {
   });
 
   const { data: claims, isLoading: isLoadingClaims } = useQuery({
-    queryKey: ['customer-claims', policies?.map(p => p.id)],
-    queryFn: () => getCustomerClaims(policies!.map(p => p.id)),
+    queryKey: ['customer-claims', policies?.map((p: Policy) => p.id)],
+    queryFn: () => getCustomerClaims(policies!.map((p: Policy) => p.id)),
     enabled: !!policies && policies.length > 0,
   });
 
@@ -46,7 +47,7 @@ const CustomerDashboard: React.FC = () => {
     );
   }
 
-  const activePoliciesCount = policies?.filter(p => p.status === 'ACTIVE').length || 0;
+  const activePoliciesCount = policies?.filter((p: Policy) => p.status === 'ACTIVE').length || 0;
   const pendingClaimsCount = claims?.filter(c => c.status !== 'PAID' && c.status !== 'REJECTED' && c.status !== 'CLOSED').length || 0;
 
   return (

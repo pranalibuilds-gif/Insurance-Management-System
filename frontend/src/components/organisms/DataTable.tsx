@@ -6,7 +6,7 @@ import { Pagination } from '../molecules/Pagination';
 
 export interface Column<T> {
   header: string;
-  accessor: keyof T | ((item: T) => React.ReactNode);
+  accessor: keyof T | ((item: T, index: number) => React.ReactNode);
   className?: string;
 }
 
@@ -63,7 +63,7 @@ export function DataTable<T extends { id: string | number }>({
             </tr>
           </thead>
           <tbody className="divide-y divide-neutral-50">
-            {data.map((item) => (
+            {data.map((item, rowIndex) => (
               <tr
                 key={item.id}
                 onClick={() => onRowClick?.(item)}
@@ -72,13 +72,13 @@ export function DataTable<T extends { id: string | number }>({
                   onRowClick && 'cursor-pointer'
                 )}
               >
-                {columns.map((column, index) => (
+                {columns.map((column, colIndex) => (
                   <td
-                    key={index}
+                    key={colIndex}
                     className={cn('px-6 py-4 text-sm text-neutral-900', column.className)}
                   >
                     {typeof column.accessor === 'function'
-                      ? column.accessor(item)
+                      ? column.accessor(item, rowIndex)
                       : (item[column.accessor] as React.ReactNode)}
                   </td>
                 ))}

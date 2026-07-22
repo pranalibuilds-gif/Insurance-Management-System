@@ -15,6 +15,9 @@ const ResetPasswordPage = lazy(() => import('../pages/auth/ResetPasswordPage'));
 const CustomerDashboard = lazy(() => import('../pages/portal/CustomerDashboard'));
 const ProductList = lazy(() => import('../pages/portal/products/ProductList'));
 const ProductDetails = lazy(() => import('../pages/portal/products/ProductDetails'));
+const PurchaseWizard = lazy(() => import('../pages/portal/purchase/PurchaseWizard'));
+const PolicyList = lazy(() => import('../pages/portal/policies/PolicyList'));
+const PolicyDetail = lazy(() => import('../pages/portal/policies/PolicyDetail'));
 const DocumentCenter = lazy(() => import('../pages/portal/documents/DocumentCenter'));
 const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
 const ProfileOverview = lazy(() => import('../pages/portal/profile/ProfileOverview'));
@@ -79,8 +82,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="dashboard" element={<CustomerDashboard />} />
           <Route path="products" element={<ProductList />} />
           <Route path="products/:id" element={<ProductDetails />} />
-          <Route path="products/:id/purchase" element={<div>Purchase Wizard</div>} />
-          <Route path="policies" element={<div>My Policies</div>} />
+          <Route path="products/:id/purchase" element={<PurchaseWizard />} />
+          <Route path="policies" element={<PolicyList />} />
+          <Route path="policies/:id" element={<PolicyDetail />} />
           <Route path="claims" element={<div>My Claims</div>} />
           <Route path="billing" element={<div>Payment History</div>} />
           <Route path="documents" element={<DocumentCenter />} />
