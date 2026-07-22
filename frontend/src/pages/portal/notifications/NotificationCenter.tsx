@@ -15,7 +15,8 @@ import {
   CreditCard,
   FileText,
   UserCheck,
-  Settings
+  Settings,
+  Activity
 } from 'lucide-react';
 import { PageHeader } from '../../../components/molecules/PageHeader';
 import { Card } from '../../../components/atoms/Card';
@@ -26,10 +27,6 @@ import { EmptyState } from '../../../components/molecules/EmptyState';
 import { getNotificationWorkspace } from '../../../mocks/notifications';
 import { cn } from '../../../utils/cn';
 import { Notification, NotificationCategory, NotificationStatus } from '../../../types/notification';
-
-import { Activity as ActivityIcon } from 'lucide-react';
-
-const Activity = (props: any) => <ActivityIcon {...props} />;
 
 const categoryIcons: Record<NotificationCategory, any> = {
   POLICY: ShieldCheck,

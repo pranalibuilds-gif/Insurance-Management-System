@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { WelcomeCard } from '../../features/dashboard/WelcomeCard';
 import { ActivePoliciesCard } from '../../features/dashboard/ActivePoliciesCard';
 import { QuickActionsCard } from '../../features/dashboard/QuickActionsCard';
+import { ActivityFeed } from '../../features/dashboard/ActivityFeed';
 import { StatCard } from '../../components/molecules/StatCard';
 import { PageHeader } from '../../components/molecules/PageHeader';
 import { LoadingSkeleton } from '../../components/molecules/LoadingSkeleton';
@@ -83,6 +84,7 @@ const CustomerDashboard: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <ActivePoliciesCard policies={policies || []} />
+        <ActivityFeed activities={customer?.activities || []} />
         <QuickActionsCard />
       </div>
     </div>

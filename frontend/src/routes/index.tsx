@@ -24,6 +24,10 @@ const ClaimWizard = lazy(() => import('../pages/portal/claims/ClaimWizard'));
 const BillingDashboard = lazy(() => import('../pages/portal/billing/BillingDashboard'));
 const DocumentCenter = lazy(() => import('../pages/portal/documents/DocumentCenter'));
 const NotificationCenter = lazy(() => import('../pages/portal/notifications/NotificationCenter'));
+const GlobalSearch = lazy(() => import('../pages/portal/search/GlobalSearch'));
+const HelpCenter = lazy(() => import('../pages/portal/help/HelpCenter'));
+const DownloadCenter = lazy(() => import('../pages/portal/downloads/DownloadCenter'));
+const SettingsPage = lazy(() => import('../pages/portal/settings/SettingsPage'));
 const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
 const ProfileOverview = lazy(() => import('../pages/portal/profile/ProfileOverview'));
 const PersonalInformation = lazy(() => import('../pages/portal/profile/PersonalInformation'));
@@ -85,6 +89,7 @@ export const AppRoutes: React.FC = () => {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<CustomerDashboard />} />
+          <Route path="search" element={<GlobalSearch />} />
           <Route path="products" element={<ProductList />} />
           <Route path="products/:id" element={<ProductDetails />} />
           <Route path="products/:id/purchase" element={<PurchaseWizard />} />
@@ -95,7 +100,10 @@ export const AppRoutes: React.FC = () => {
           <Route path="claims/new" element={<ClaimWizard />} />
           <Route path="billing" element={<BillingDashboard />} />
           <Route path="documents" element={<DocumentCenter />} />
+          <Route path="downloads" element={<DownloadCenter />} />
           <Route path="notifications" element={<NotificationCenter />} />
+          <Route path="help" element={<HelpCenter />} />
+          <Route path="settings" element={<SettingsPage />} />
 
           {/* Profile Workspace */}
           <Route path="profile" element={<ProfileLayout />}>
