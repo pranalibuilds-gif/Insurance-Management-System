@@ -55,11 +55,11 @@ export const getPolicyWorkspace = async (id: string): Promise<PolicyWorkspace | 
   return {
     summary: policy,
     premiumSchedule: [
-      { id: 'inst_1', scheduleId: 'sch_1', dueDate: '2026-02-15', amount: 1200, status: 'PAID', paymentDate: '2026-02-14', transactionId: 'TXN-123', receiptNumber: 'REC-001' },
-      { id: 'inst_2', scheduleId: 'sch_1', dueDate: '2026-03-15', amount: 1200, status: 'PAID', paymentDate: '2026-03-14', transactionId: 'TXN-124', receiptNumber: 'REC-002' },
-      { id: 'inst_3', scheduleId: 'sch_1', dueDate: '2026-04-15', amount: 1200, status: 'PENDING' },
+      { id: 'inst_1', policyId: policy.id, policyNumber: policy.policyNumber, productName: policy.productName, dueDate: '2026-02-15', amount: 1200, status: 'PAID', paymentDate: '2026-02-14', transactionId: 'TXN-123', receiptNumber: 'REC-001' },
+      { id: 'inst_2', policyId: policy.id, policyNumber: policy.policyNumber, productName: policy.productName, dueDate: '2026-03-15', amount: 1200, status: 'PAID', paymentDate: '2026-03-14', transactionId: 'TXN-124', receiptNumber: 'REC-002' },
+      { id: 'inst_3', policyId: policy.id, policyNumber: policy.policyNumber, productName: policy.productName, dueDate: '2026-04-15', amount: 1200, status: 'PENDING' },
     ],
-    documents: mockDocuments.filter(d => d.id === 'doc_1'), // Simplified filter
+    documents: mockDocuments.filter(d => d.id === 'doc_1'),
     claims: mockClaims.filter(c => c.policyId === id),
     timeline: [
       { id: 't_1', type: 'Policy Purchased', description: 'Policy created and first premium paid', timestamp: '2026-01-01T10:00:00Z' },
