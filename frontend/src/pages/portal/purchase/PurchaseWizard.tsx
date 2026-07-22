@@ -9,7 +9,6 @@ import { Spinner } from '../../../components/atoms/Spinner';
 import { Alert } from '../../../components/molecules/Alert';
 import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
 import { DataTable, Column } from '../../../components/organisms/DataTable';
-import { FileDropzone } from '../../../components/molecules/FileDropzone';
 import { getProductById } from '../../../mocks/products';
 import { getCustomerProfile } from '../../../mocks/customers';
 import { getDocuments } from '../../../mocks/documents';
@@ -19,9 +18,11 @@ import {
   calculatePremiumSnapshot,
   evaluateEligibility,
   generatePurchaseReference,
-  mapNomineeToPurchase
+  mapNomineeToPurchase,
+  buildPurchaseReview,
+  clearDraft
 } from '../../../features/purchase/wizardStore';
-import { PurchaseDraft, StepStatus, PurchaseNominee, PurchaseDocumentReference } from '../../../types/wizard';
+import { PurchaseDraft, StepStatus, PurchaseDocumentReference, PurchaseReview, PurchaseNominee } from '../../../types/wizard';
 import {
   CheckCircle2,
   ChevronRight,
@@ -33,9 +34,9 @@ import {
   AlertCircle,
   ClipboardCheck,
   Zap,
-  Plus,
-  Trash2,
-  Paperclip
+  Paperclip,
+  Receipt,
+  ArrowRightCircle
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import toast from 'react-hot-toast';
@@ -75,7 +76,7 @@ const PurchaseWizard: React.FC = () => {
 
   useEffect(() => {
     const savedDraft = getDraft();
-    if (savedDraft && savedDraft.productId === productId && !savedDraft.isComplete) {
+    if (savedDraft && savedDraft.productId === productId && !savedDraft.isSubmitted) {
       setDraft(savedDraft);
       setCurrentStep(savedDraft.currentStep);
       toast('Resumed your purchase progress.', { icon: '🔄' });
@@ -86,18 +87,21 @@ const PurchaseWizard: React.FC = () => {
         premiumFrequency: product.premiumFrequencies[0],
         selectedNominees: [],
         attachedDocuments: [],
+        declarationsAccepted: false,
         currentStep: 1,
         stepStatuses: { 1: 'IN_PROGRESS' },
+        paymentStatus: 'NOT_STARTED',
         purchaseReference: generatePurchaseReference(),
         lastSaved: new Date().toISOString(),
         isComplete: false,
+        isSubmitted: false,
       };
       setDraft(initialDraft);
     }
   }, [product, productId]);
 
   useEffect(() => {
-    if (draft && product && customer) {
+    if (draft && product && customer && !draft.isSubmitted) {
       const pricing = calculatePremiumSnapshot(draft.coverageAmount, draft.premiumFrequency);
       const eligibility = evaluateEligibility(product, customer, draft);
 
@@ -113,7 +117,7 @@ const PurchaseWizard: React.FC = () => {
         saveDraft(updated);
       }
     }
-  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees, draft?.attachedDocuments, product, customer]);
+  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees, draft?.attachedDocuments, draft?.declarationsAccepted, product, customer]);
 
   const handleNext = () => {
     if (currentStep < steps.length) {
@@ -130,6 +134,36 @@ const PurchaseWizard: React.FC = () => {
     if (currentStep > 1) {
       setCurrentStep(currentStep - 1);
     }
+  };
+
+  const handlePayment = async () => {
+    if (!draft) return;
+
+    setDraft({ ...draft, paymentStatus: 'PROCESSING' });
+    await new Promise(resolve => setTimeout(resolve, 2000));
+
+    const success = true;
+    if (success) {
+      const updatedDraft: PurchaseDraft = {
+        ...draft,
+        paymentStatus: 'SUCCESS',
+        isSubmitted: true,
+        currentStep: 8,
+        stepStatuses: { ...draft.stepStatuses, 7: 'COMPLETED', 8: 'IN_PROGRESS' }
+      };
+      setDraft(updatedDraft);
+      saveDraft(updatedDraft);
+      toast.success('Payment Successful!');
+      setCurrentStep(8);
+    } else {
+      setDraft({ ...draft, paymentStatus: 'FAILED' });
+      toast.error('Payment Failed. Please try again.');
+    }
+  };
+
+  const finalizePurchase = () => {
+    clearDraft();
+    navigate('/portal/policies');
   };
 
   const toggleNominee = (nominee: any) => {
@@ -154,8 +188,9 @@ const PurchaseWizard: React.FC = () => {
     setDraft({ ...draft, attachedDocuments: [...draft.attachedDocuments.filter(d => d.documentType !== type), newRef] });
   };
 
-  if (isLoadingProduct || !draft || !product) return <Spinner variant="centered" />;
+  if (isLoadingProduct || !draft || !product || !customer) return <Spinner variant="centered" />;
 
+  const review = buildPurchaseReview(draft, product, customer);
   const totalNomineeShare = draft.selectedNominees.reduce((acc, n) => acc + n.sharePercentage, 0);
 
   return (
@@ -165,49 +200,52 @@ const PurchaseWizard: React.FC = () => {
         description={`Reference: ${draft.purchaseReference}`}
       />
 
-      {/* Stepper */}
-      <div className="flex items-center justify-between px-4 bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm overflow-x-auto">
-        {steps.map((step, index) => {
-          const Icon = step.icon;
-          const status = draft.stepStatuses[step.id] || 'NOT_STARTED';
-          const isActive = currentStep === step.id;
+      {currentStep < 8 && (
+        <div className="flex items-center justify-between px-4 bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm overflow-x-auto">
+          {steps.map((step, index) => {
+            const Icon = step.icon;
+            const status = draft.stepStatuses[step.id] || 'NOT_STARTED';
+            const isActive = currentStep === step.id;
 
-          return (
-            <React.Fragment key={step.id}>
-              <div className="flex flex-col items-center gap-2 min-w-[70px]">
-                <div className={cn(
-                  'h-10 w-10 rounded-full flex items-center justify-center transition-all border-2',
-                  isActive ? 'bg-brand-600 border-brand-600 text-white ring-4 ring-brand-100' :
-                  status === 'COMPLETED' ? 'bg-success-500 border-success-500 text-white' :
-                  'bg-white border-neutral-200 text-neutral-400'
-                )}>
-                  {status === 'COMPLETED' ? <CheckCircle2 className="h-6 w-6" /> : <Icon className="h-5 w-5" />}
+            return (
+              <React.Fragment key={step.id}>
+                <div className="flex flex-col items-center gap-2 min-w-[70px]">
+                  <div className={cn(
+                    'h-10 w-10 rounded-full flex items-center justify-center transition-all border-2',
+                    isActive ? 'bg-brand-600 border-brand-600 text-white ring-4 ring-brand-100' :
+                    status === 'COMPLETED' ? 'bg-success-500 border-success-500 text-white' :
+                    'bg-white border-neutral-200 text-neutral-400'
+                  )}>
+                    {status === 'COMPLETED' ? <CheckCircle2 className="h-6 w-6" /> : <Icon className="h-5 w-5" />}
+                  </div>
+                  <span className={cn(
+                    'text-[10px] font-bold uppercase tracking-widest',
+                    isActive ? 'text-brand-600' : status === 'COMPLETED' ? 'text-success-600' : 'text-neutral-400'
+                  )}>
+                    {step.title}
+                  </span>
                 </div>
-                <span className={cn(
-                  'text-[10px] font-bold uppercase tracking-widest',
-                  isActive ? 'text-brand-600' : status === 'COMPLETED' ? 'text-success-600' : 'text-neutral-400'
-                )}>
-                  {step.title}
-                </span>
-              </div>
-              {index < steps.length - 1 && (
-                <div className={cn(
-                  'flex-1 h-0.5 min-w-[15px] mx-2 -mt-6',
-                  draft.stepStatuses[step.id] === 'COMPLETED' ? 'bg-success-500' : 'bg-neutral-100'
-                )} />
-              )}
-            </React.Fragment>
-          );
-        })}
-      </div>
+                {index < steps.length - 1 && (
+                  <div className={cn(
+                    'flex-1 h-0.5 min-w-[15px] mx-2 -mt-6',
+                    draft.stepStatuses[step.id] === 'COMPLETED' ? 'bg-success-500' : 'bg-neutral-100'
+                  )} />
+                )}
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 items-start">
-        <div className="lg:col-span-3 space-y-6">
+        <div className={cn("space-y-6", currentStep === 8 ? "lg:col-span-4" : "lg:col-span-3")}>
           <Card className="min-h-[450px]">
-            <Card.Header className="flex justify-between items-center">
-              <h3 className="text-xl font-bold text-neutral-900">{steps[currentStep-1].title}</h3>
-              <Badge variant="info">Step {currentStep} of {steps.length}</Badge>
-            </Card.Header>
+            {currentStep < 8 && (
+              <Card.Header className="flex justify-between items-center">
+                <h3 className="text-xl font-bold text-neutral-900">{steps[currentStep-1].title}</h3>
+                <Badge variant="info">Step {currentStep} of {steps.length}</Badge>
+              </Card.Header>
+            )}
             <Card.Content>
               {currentStep === 1 && (
                 <div className="space-y-6 animate-entrance">
@@ -370,72 +408,201 @@ const PurchaseWizard: React.FC = () => {
                 </div>
               )}
 
-              {currentStep > 5 && (
-                <div className="py-20 text-center space-y-4">
-                   <div className="h-20 w-20 bg-neutral-50 rounded-full flex items-center justify-center mx-auto text-neutral-300">
-                      <Spinner size="lg" />
+              {currentStep === 6 && (
+                <div className="space-y-8 animate-entrance">
+                  <Alert variant="info" title="Review your Policy details">
+                    Please ensure all information below is correct. Once submitted, your application will be processed.
+                  </Alert>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                       <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Customer & Plan</h5>
+                       <div className="space-y-2">
+                          <p className="text-sm"><span className="text-neutral-500">Applicant:</span> <span className="font-bold">{review.customer.fullName}</span></p>
+                          <p className="text-sm"><span className="text-neutral-500">Product:</span> <span className="font-bold">{review.product.name}</span></p>
+                          <p className="text-sm"><span className="text-neutral-500">Coverage:</span> <span className="font-bold">${review.coverage.amount.toLocaleString()}</span></p>
+                          <p className="text-sm"><span className="text-neutral-500">Billing:</span> <span className="font-bold">{review.coverage.frequency}</span></p>
+                       </div>
+                    </div>
+                    <div className="space-y-4">
+                       <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Beneficiaries</h5>
+                       <div className="space-y-2">
+                          {review.nominees.map((n: PurchaseNominee) => (
+                            <div key={n.id} className="flex justify-between text-sm">
+                               <span className="text-neutral-500">{n.fullName} ({n.relationship})</span>
+                               <span className="font-bold">{n.sharePercentage}%</span>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-6 border-t border-neutral-100 space-y-4">
+                    <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Declarations</h5>
+                    <div className="space-y-3">
+                      {review.declarations.map((decl: any) => (
+                        <div key={decl.id} className="flex items-start gap-3">
+                           <input
+                              type="checkbox"
+                              checked={decl.isAccepted}
+                              onChange={() => setDraft({...draft, declarationsAccepted: !draft.declarationsAccepted})}
+                              className="mt-1 h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+                           />
+                           <label className="text-sm text-neutral-600 leading-tight">{decl.text}</label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 7 && (
+                <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-entrance">
+                   {draft.paymentStatus === 'PROCESSING' ? (
+                      <>
+                        <div className="relative">
+                          <Spinner size="lg" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <CreditCard className="h-6 w-6 text-brand-600" />
+                          </div>
+                        </div>
+                        <div className="text-center space-y-2">
+                          <h4 className="text-xl font-bold text-neutral-900">Processing Payment...</h4>
+                          <p className="text-sm text-neutral-500">Please do not refresh or close the browser.</p>
+                        </div>
+                      </>
+                   ) : (
+                      <>
+                        <div className="h-20 w-20 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+                          <CreditCard className="h-10 w-10" />
+                        </div>
+                        <div className="text-center space-y-4 max-w-sm">
+                          <h4 className="text-2xl font-bold text-neutral-900">Complete Purchase</h4>
+                          <p className="text-sm text-neutral-500 leading-relaxed">
+                            You are about to authorize a payment of <span className="font-bold text-neutral-900">${draft.pricingSnapshot?.totalAmount.toLocaleString()}</span> for your first installment.
+                          </p>
+                        </div>
+                        <Button size="lg" className="w-full max-w-xs" onClick={handlePayment}>
+                          Pay & Authorize
+                        </Button>
+                      </>
+                   )}
+                </div>
+              )}
+
+              {currentStep === 8 && (
+                <div className="py-8 space-y-10 animate-entrance">
+                   <div className="flex flex-col items-center text-center space-y-4">
+                      <div className="h-20 w-20 rounded-full bg-success-50 flex items-center justify-center text-success-600 border-4 border-success-100">
+                         <CheckCircle2 className="h-12 w-12" />
+                      </div>
+                      <div className="space-y-2">
+                        <h3 className="text-3xl font-black text-neutral-900">Purchase Submitted!</h3>
+                        <p className="text-neutral-500">Your application is being processed by our underwriting team.</p>
+                      </div>
                    </div>
-                   <p className="text-neutral-500 font-medium italic">Building Step: {steps[currentStep-1].title}...</p>
+
+                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <Card variant="outlined">
+                        <Card.Content className="p-6 space-y-4">
+                           <div className="flex items-center gap-2 text-neutral-400 font-bold uppercase tracking-widest text-[10px]">
+                              <ClipboardCheck className="h-4 w-4" /> Submission Reference
+                           </div>
+                           <p className="text-xl font-mono font-bold text-neutral-900">{draft.purchaseReference}</p>
+                           <div className="flex justify-between items-center text-sm border-t border-neutral-50 pt-4">
+                              <span className="text-neutral-500">Policy Status</span>
+                              <Badge variant="info">Pending Issuance</Badge>
+                           </div>
+                        </Card.Content>
+                      </Card>
+
+                      <Card variant="outlined">
+                        <Card.Content className="p-6 space-y-4">
+                           <div className="flex items-center gap-2 text-neutral-400 font-bold uppercase tracking-widest text-[10px]">
+                              <Receipt className="h-4 w-4" /> Payment Status
+                           </div>
+                           <p className="text-xl font-bold text-success-600">Successful</p>
+                           <div className="flex justify-between items-center text-sm border-t border-neutral-50 pt-4">
+                              <span className="text-neutral-500">Transaction ID</span>
+                              <span className="font-mono text-neutral-900">TXN-{Math.floor(Math.random()*1000000)}</span>
+                           </div>
+                        </Card.Content>
+                      </Card>
+                   </div>
+
+                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 border-t border-neutral-100">
+                      <Button variant="outline" onClick={() => window.print()}>
+                        <FileText className="h-4 w-4 mr-2" /> Download Summary
+                      </Button>
+                      <Button onClick={finalizePurchase}>
+                        Go to My Policies <ArrowRightCircle className="h-4 w-4 ml-2" />
+                      </Button>
+                   </div>
                 </div>
               )}
             </Card.Content>
           </Card>
 
-          <div className="flex items-center justify-between">
-            <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
-              <ChevronLeft className="h-4 w-4 mr-2" /> Previous Step
-            </Button>
-            <Button
-              onClick={handleNext}
-              disabled={
-                currentStep === steps.length ||
-                (currentStep === 4 && totalNomineeShare !== 100) ||
-                (currentStep === 5 && !draft.eligibilitySnapshot?.hasRequiredDocuments)
-              }
-            >
-              {currentStep === 6 ? 'Proceed to Payment' : currentStep === 7 ? 'Authorize' : 'Save & Continue'}
-              <ChevronRight className="h-4 w-4 ml-2" />
-            </Button>
-          </div>
+          {currentStep < 8 && (
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1 || draft.paymentStatus === 'PROCESSING'}>
+                <ChevronLeft className="h-4 w-4 mr-2" /> Previous Step
+              </Button>
+              <Button
+                onClick={handleNext}
+                disabled={
+                  currentStep >= 7 ||
+                  (currentStep === 4 && totalNomineeShare !== 100) ||
+                  (currentStep === 5 && !draft.eligibilitySnapshot?.hasRequiredDocuments) ||
+                  (currentStep === 6 && !draft.declarationsAccepted)
+                }
+              >
+                {currentStep === 6 ? 'Proceed to Payment' : 'Save & Continue'}
+                <ChevronRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
 
         {/* Sidebar Summary */}
-        <div className="space-y-6 lg:sticky lg:top-24">
-          <Card className="bg-neutral-900 text-white border-none shadow-xl">
-            <Card.Header className="border-white/10 bg-white/5">
-              <h4 className="font-bold uppercase tracking-widest text-[10px] text-neutral-400">Policy Snapshot</h4>
-            </Card.Header>
-            <Card.Content className="p-6 space-y-6">
-              <div className="text-center">
-                <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Estimated Premium</p>
-                <div className="flex items-baseline justify-center gap-1">
-                  <span className="text-4xl font-black text-white">
-                    ${draft.pricingSnapshot?.totalAmount.toLocaleString()}
-                  </span>
-                  <span className="text-neutral-500 text-xs font-bold">/{draft.premiumFrequency.toLowerCase()}</span>
+        {currentStep < 8 && (
+          <div className="space-y-6 lg:sticky lg:top-24">
+            <Card className="bg-neutral-900 text-white border-none shadow-xl">
+              <Card.Header className="border-white/10 bg-white/5">
+                <h4 className="font-bold uppercase tracking-widest text-[10px] text-neutral-400">Policy Snapshot</h4>
+              </Card.Header>
+              <Card.Content className="p-6 space-y-6">
+                <div className="text-center">
+                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Estimated Premium</p>
+                  <div className="flex items-baseline justify-center gap-1">
+                    <span className="text-4xl font-black text-white">
+                      ${draft.pricingSnapshot?.totalAmount.toLocaleString()}
+                    </span>
+                    <span className="text-neutral-500 text-xs font-bold">/{draft.premiumFrequency.toLowerCase()}</span>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-4 pt-6 border-t border-white/10">
-                <div className="space-y-2">
-                  <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Eligibility</p>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-400">Profile Verified</span>
-                    {draft.eligibilitySnapshot?.isKYCVerified ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <AlertCircle className="h-3.5 w-3.5 text-warning-500" />}
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-400">Nominees (100%)</span>
-                    {draft.eligibilitySnapshot?.hasNomineesAllocated ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-neutral-400">Documents</span>
-                    {draft.eligibilitySnapshot?.hasRequiredDocuments ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
+                <div className="space-y-4 pt-6 border-t border-white/10">
+                  <div className="space-y-2">
+                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Eligibility</p>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-neutral-400">Profile Verified</span>
+                      {draft.eligibilitySnapshot?.isKYCVerified ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <AlertCircle className="h-3.5 w-3.5 text-warning-500" />}
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-neutral-400">Nominees (100%)</span>
+                      {draft.eligibilitySnapshot?.hasNomineesAllocated ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
+                    </div>
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-neutral-400">Documents</span>
+                      {draft.eligibilitySnapshot?.hasRequiredDocuments ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </Card.Content>
-          </Card>
-        </div>
+              </Card.Content>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );

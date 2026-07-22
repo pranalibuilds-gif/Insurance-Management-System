@@ -1,4 +1,4 @@
-import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot, PurchaseNominee } from '../../types/wizard';
+import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot, PurchaseNominee, PurchaseReview } from '../../types/wizard';
 import { InsuranceProduct } from '../../types/product';
 import { Customer, Nominee } from '../../types/customer';
 
@@ -83,4 +83,35 @@ export const evaluateEligibility = (
 
 export const generatePurchaseReference = () => {
   return `PUR-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+};
+
+export const buildPurchaseReview = (
+  draft: PurchaseDraft,
+  product: InsuranceProduct,
+  customer: Customer
+): PurchaseReview => {
+  return {
+    purchaseReference: draft.purchaseReference,
+    product: {
+      name: product.name,
+      category: product.category,
+    },
+    customer: {
+      fullName: `${customer.firstName} ${customer.lastName}`,
+      email: customer.email,
+    },
+    coverage: {
+      amount: draft.coverageAmount,
+      frequency: draft.premiumFrequency,
+    },
+    nominees: draft.selectedNominees,
+    documents: draft.attachedDocuments,
+    pricing: draft.pricingSnapshot!,
+    eligibility: draft.eligibilitySnapshot!,
+    declarations: [
+      { id: 'decl_1', text: 'I confirm all information provided is accurate and truthful.', isAccepted: draft.declarationsAccepted },
+      { id: 'decl_2', text: 'I have read and understood the policy terms, conditions, and exclusions.', isAccepted: draft.declarationsAccepted },
+      { id: 'decl_3', text: 'I agree to the Terms & Conditions and Privacy Policy of the platform.', isAccepted: draft.declarationsAccepted },
+    ],
+  };
 };
