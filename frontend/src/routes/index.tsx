@@ -18,6 +18,9 @@ const ProductDetails = lazy(() => import('../pages/portal/products/ProductDetail
 const PurchaseWizard = lazy(() => import('../pages/portal/purchase/PurchaseWizard'));
 const PolicyList = lazy(() => import('../pages/portal/policies/PolicyList'));
 const PolicyDetail = lazy(() => import('../pages/portal/policies/PolicyDetail'));
+const ClaimsDashboard = lazy(() => import('../pages/portal/claims/ClaimsDashboard'));
+const ClaimDetail = lazy(() => import('../pages/portal/claims/ClaimDetail'));
+const ClaimWizard = lazy(() => import('../pages/portal/claims/ClaimWizard'));
 const BillingDashboard = lazy(() => import('../pages/portal/billing/BillingDashboard'));
 const DocumentCenter = lazy(() => import('../pages/portal/documents/DocumentCenter'));
 const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
@@ -86,7 +89,9 @@ export const AppRoutes: React.FC = () => {
           <Route path="products/:id/purchase" element={<PurchaseWizard />} />
           <Route path="policies" element={<PolicyList />} />
           <Route path="policies/:id" element={<PolicyDetail />} />
-          <Route path="claims" element={<div>My Claims</div>} />
+          <Route path="claims" element={<ClaimsDashboard />} />
+          <Route path="claims/:id" element={<ClaimDetail />} />
+          <Route path="claims/new" element={<ClaimWizard />} />
           <Route path="billing" element={<BillingDashboard />} />
           <Route path="documents" element={<DocumentCenter />} />
           <Route path="notifications" element={<div>All Notifications</div>} />

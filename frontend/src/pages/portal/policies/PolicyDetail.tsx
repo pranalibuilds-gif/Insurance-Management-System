@@ -230,7 +230,6 @@ const PolicyDetail: React.FC = () => {
                   { header: 'Claim Number', accessor: 'claimNumber' },
                   { header: 'Type', accessor: 'type' },
                   { header: 'Date', accessor: (c) => new Date(c.incidentDate).toLocaleDateString() },
-                  { header: 'Amount', accessor: (c) => `$${c.approvedAmount.toLocaleString()}` },
                   {
                     header: 'Status',
                     accessor: (c) => <Badge variant="info">{c.status.replace('_', ' ')}</Badge>
