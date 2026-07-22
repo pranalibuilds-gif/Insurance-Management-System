@@ -23,6 +23,7 @@ const ClaimDetail = lazy(() => import('../pages/portal/claims/ClaimDetail'));
 const ClaimWizard = lazy(() => import('../pages/portal/claims/ClaimWizard'));
 const BillingDashboard = lazy(() => import('../pages/portal/billing/BillingDashboard'));
 const DocumentCenter = lazy(() => import('../pages/portal/documents/DocumentCenter'));
+const NotificationCenter = lazy(() => import('../pages/portal/notifications/NotificationCenter'));
 const ProfileLayout = lazy(() => import('../pages/portal/profile/ProfileLayout'));
 const ProfileOverview = lazy(() => import('../pages/portal/profile/ProfileOverview'));
 const PersonalInformation = lazy(() => import('../pages/portal/profile/PersonalInformation'));
@@ -94,7 +95,7 @@ export const AppRoutes: React.FC = () => {
           <Route path="claims/new" element={<ClaimWizard />} />
           <Route path="billing" element={<BillingDashboard />} />
           <Route path="documents" element={<DocumentCenter />} />
-          <Route path="notifications" element={<div>All Notifications</div>} />
+          <Route path="notifications" element={<NotificationCenter />} />
 
           {/* Profile Workspace */}
           <Route path="profile" element={<ProfileLayout />}>
