@@ -8,7 +8,6 @@ import { Badge } from '../../../components/atoms/Badge';
 import { Spinner } from '../../../components/atoms/Spinner';
 import { Alert } from '../../../components/molecules/Alert';
 import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
-import { DataTable, Column } from '../../../components/organisms/DataTable';
 import { getProductById } from '../../../mocks/products';
 import { getCustomerProfile } from '../../../mocks/customers';
 import { getDocuments } from '../../../mocks/documents';
@@ -20,7 +19,8 @@ import {
   generatePurchaseReference,
   mapNomineeToPurchase,
   buildPurchaseReview,
-  clearDraft
+  clearDraft,
+  updateWorkflowStatus
 } from '../../../features/purchase/wizardStore';
 import { PurchaseDraft, StepStatus, PurchaseDocumentReference, PurchaseReview, PurchaseNominee } from '../../../types/wizard';
 import {
@@ -36,7 +36,9 @@ import {
   Zap,
   Paperclip,
   Receipt,
-  ArrowRightCircle
+  ArrowRightCircle,
+  XCircle,
+  Clock
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import toast from 'react-hot-toast';
@@ -91,6 +93,7 @@ const PurchaseWizard: React.FC = () => {
         currentStep: 1,
         stepStatuses: { 1: 'IN_PROGRESS' },
         paymentStatus: 'NOT_STARTED',
+        workflowStatus: 'DRAFT',
         purchaseReference: generatePurchaseReference(),
         lastSaved: new Date().toISOString(),
         isComplete: false,
@@ -105,10 +108,11 @@ const PurchaseWizard: React.FC = () => {
       const pricing = calculatePremiumSnapshot(draft.coverageAmount, draft.premiumFrequency);
       const eligibility = evaluateEligibility(product, customer, draft);
 
-      const updated = {
+      const updated: PurchaseDraft = {
         ...draft,
         pricingSnapshot: pricing,
         eligibilitySnapshot: eligibility,
+        workflowStatus: updateWorkflowStatus(draft),
         lastSaved: new Date().toISOString()
       };
 
@@ -142,8 +146,9 @@ const PurchaseWizard: React.FC = () => {
     setDraft({ ...draft, paymentStatus: 'PROCESSING' });
     await new Promise(resolve => setTimeout(resolve, 2000));
 
-    const success = true;
-    if (success) {
+    // Mock simulation for different results
+    const rand = Math.random();
+    if (rand > 0.2) {
       const updatedDraft: PurchaseDraft = {
         ...draft,
         paymentStatus: 'SUCCESS',
@@ -155,9 +160,12 @@ const PurchaseWizard: React.FC = () => {
       saveDraft(updatedDraft);
       toast.success('Payment Successful!');
       setCurrentStep(8);
-    } else {
+    } else if (rand > 0.1) {
       setDraft({ ...draft, paymentStatus: 'FAILED' });
-      toast.error('Payment Failed. Please try again.');
+      toast.error('Payment Failed. Insufficient funds.');
+    } else {
+      setDraft({ ...draft, paymentStatus: 'TIMEOUT' });
+      toast.error('Payment timed out. Please check your connection.');
     }
   };
 
@@ -471,6 +479,32 @@ const PurchaseWizard: React.FC = () => {
                           <p className="text-sm text-neutral-500">Please do not refresh or close the browser.</p>
                         </div>
                       </>
+                   ) : draft.paymentStatus === 'FAILED' ? (
+                      <div className="flex flex-col items-center text-center space-y-6">
+                        <div className="h-20 w-20 rounded-full bg-danger-50 flex items-center justify-center text-danger-600">
+                           <XCircle className="h-10 w-10" />
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-2xl font-bold text-neutral-900">Payment Failed</h4>
+                          <p className="text-sm text-neutral-500">Something went wrong with your transaction. Please try again.</p>
+                        </div>
+                        <Button onClick={() => setDraft({...draft, paymentStatus: 'NOT_STARTED'})}>
+                          Try Again
+                        </Button>
+                      </div>
+                   ) : draft.paymentStatus === 'TIMEOUT' ? (
+                      <div className="flex flex-col items-center text-center space-y-6">
+                        <div className="h-20 w-20 rounded-full bg-warning-50 flex items-center justify-center text-warning-600">
+                           <Clock className="h-10 w-10" />
+                        </div>
+                        <div className="space-y-2">
+                          <h4 className="text-2xl font-bold text-neutral-900">Payment Timeout</h4>
+                          <p className="text-sm text-neutral-500">The session has timed out. Please retry the payment.</p>
+                        </div>
+                        <Button onClick={() => setDraft({...draft, paymentStatus: 'NOT_STARTED'})}>
+                          Retry Payment
+                        </Button>
+                      </div>
                    ) : (
                       <>
                         <div className="h-20 w-20 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">

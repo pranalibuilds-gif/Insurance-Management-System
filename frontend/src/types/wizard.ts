@@ -1,5 +1,4 @@
 import { PremiumFrequency } from './product';
-import { Nominee } from './customer';
 
 export interface PurchaseNominee {
   id: string;
@@ -37,7 +36,23 @@ export interface EligibilitySnapshot {
   overallStatus: boolean;
 }
 
-export type PaymentStatus = 'NOT_STARTED' | 'INITIATED' | 'PROCESSING' | 'SUCCESS' | 'FAILED' | 'CANCELLED';
+export type PaymentStatus =
+  | 'NOT_STARTED'
+  | 'INITIATED'
+  | 'PROCESSING'
+  | 'SUCCESS'
+  | 'FAILED'
+  | 'CANCELLED'
+  | 'TIMEOUT';
+
+export type PurchaseWorkflowStatus =
+  | 'DRAFT'
+  | 'ELIGIBILITY_CHECKED'
+  | 'READY_FOR_REVIEW'
+  | 'PAYMENT_PENDING'
+  | 'PAYMENT_SUCCESS'
+  | 'SUBMITTED'
+  | 'COMPLETED';
 
 export interface PurchaseReview {
   purchaseReference: string;
@@ -76,7 +91,7 @@ export interface PurchaseDraft {
   coverageAmount: number;
   premiumFrequency: PremiumFrequency;
 
-  // Snapshots (Copied from master data)
+  // Snapshots
   selectedNominees: PurchaseNominee[];
   attachedDocuments: PurchaseDocumentReference[];
 
@@ -89,6 +104,7 @@ export interface PurchaseDraft {
   currentStep: number;
   stepStatuses: Record<number, StepStatus>;
   paymentStatus: PaymentStatus;
+  workflowStatus: PurchaseWorkflowStatus;
 
   purchaseReference: string;
   lastSaved: string;

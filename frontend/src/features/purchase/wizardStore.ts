@@ -1,4 +1,4 @@
-import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot, PurchaseNominee, PurchaseReview } from '../../types/wizard';
+import { PurchaseDraft, PricingSnapshot, EligibilitySnapshot, PurchaseNominee, PurchaseReview, PurchaseWorkflowStatus } from '../../types/wizard';
 import { InsuranceProduct } from '../../types/product';
 import { Customer, Nominee } from '../../types/customer';
 
@@ -81,8 +81,13 @@ export const evaluateEligibility = (
   };
 };
 
-export const generatePurchaseReference = () => {
-  return `PUR-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
+export const updateWorkflowStatus = (draft: PurchaseDraft): PurchaseWorkflowStatus => {
+  if (draft.paymentStatus === 'SUCCESS') return 'PAYMENT_SUCCESS';
+  if (draft.currentStep === 8) return 'COMPLETED';
+  if (draft.currentStep === 7) return 'PAYMENT_PENDING';
+  if (draft.currentStep === 6) return 'READY_FOR_REVIEW';
+  if (draft.eligibilitySnapshot?.overallStatus) return 'ELIGIBILITY_CHECKED';
+  return 'DRAFT';
 };
 
 export const buildPurchaseReview = (
@@ -114,4 +119,8 @@ export const buildPurchaseReview = (
       { id: 'decl_3', text: 'I agree to the Terms & Conditions and Privacy Policy of the platform.', isAccepted: draft.declarationsAccepted },
     ],
   };
+};
+
+export const generatePurchaseReference = () => {
+  return `PUR-${new Date().getFullYear()}-${Math.floor(100000 + Math.random() * 900000)}`;
 };
