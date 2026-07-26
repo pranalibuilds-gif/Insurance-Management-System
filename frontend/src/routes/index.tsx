@@ -20,6 +20,8 @@ const PolicyList = lazy(() => import('../pages/portal/policies/PolicyList'));
 const PolicyDetail = lazy(() => import('../pages/portal/policies/PolicyDetail'));
 const StaffDashboard = lazy(() => import('../pages/staff/StaffDashboard'));
 const CustomerWorkspaceStaff = lazy(() => import('../pages/staff/CustomerWorkspace'));
+const PolicyListStaff = lazy(() => import('../pages/staff/PolicyList'));
+const PolicyWorkspaceStaff = lazy(() => import('../pages/staff/PolicyWorkspace'));
 const ClaimsQueue = lazy(() => import('../pages/staff/ClaimsQueue'));
 const ClaimWorkspaceStaff = lazy(() => import('../pages/staff/ClaimWorkspace'));
 const ClaimsDashboard = lazy(() => import('../pages/portal/claims/ClaimsDashboard'));
@@ -134,7 +136,8 @@ export const AppRoutes: React.FC = () => {
           <Route path="dashboard" element={<StaffDashboard />} />
           <Route path="customers" element={<div>Customer Management</div>} />
           <Route path="customers/:id" element={<CustomerWorkspaceStaff />} />
-          <Route path="policies" element={<div>Policy Management</div>} />
+          <Route path="policies" element={<PolicyListStaff />} />
+          <Route path="policies/:id" element={<PolicyWorkspaceStaff />} />
           <Route path="claims" element={<ClaimsQueue />} />
           <Route path="claims/:id" element={<ClaimWorkspaceStaff />} />
           <Route path="products" element={<div>Product Builder</div>} />
