@@ -22,11 +22,19 @@ export const StaffLayout: React.FC = () => {
     role: user.role,
   } : null;
 
+  const filteredPrimary = staffNavigation.primary.filter(item =>
+    !item.roles || (user && item.roles.includes(user.role))
+  );
+
+  const filteredFooter = staffNavigation.footer?.filter(item =>
+    !item.roles || (user && item.roles.includes(user.role))
+  );
+
   return (
     <div className="flex h-screen overflow-hidden bg-neutral-50">
       <Sidebar
-        items={staffNavigation.primary}
-        footerItems={staffNavigation.footer}
+        items={filteredPrimary}
+        footerItems={filteredFooter}
         collapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
         onLogout={logout}

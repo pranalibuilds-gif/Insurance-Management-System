@@ -1,4 +1,5 @@
 import { LucideIcon } from 'lucide-react';
+import { UserRole } from '../mocks/auth';
 
 export interface NavItem {
   id: string;
@@ -6,6 +7,7 @@ export interface NavItem {
   icon: LucideIcon;
   href: string;
   badgeCount?: number;
+  roles?: UserRole[];
   children?: NavItem[];
 }
 
