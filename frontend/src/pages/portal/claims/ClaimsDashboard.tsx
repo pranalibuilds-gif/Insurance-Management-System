@@ -40,14 +40,14 @@ const ClaimsDashboard: React.FC = () => {
   const stats = [
     { label: 'Active Claims', value: claims?.filter(c => !['PAID', 'REJECTED', 'CLOSED'].includes(c.status)).length || 0, icon: Activity, color: 'text-brand-600' },
     { label: 'Awaiting Documents', value: claims?.filter(c => c.status === 'AWAITING_CUSTOMER').length || 0, icon: FileText, color: 'text-warning-600' },
-    { label: 'Under Review', value: claims?.filter(c => c.status === 'UNDER_REVIEW').length || 0, icon: Clock, color: 'text-info-600' },
+    { label: 'Under Review', value: claims?.filter(c => c.status === 'UNDER_INVESTIGATION').length || 0, icon: Clock, color: 'text-info-600' },
     { label: 'Settled', value: claims?.filter(c => c.status === 'PAID').length || 0, icon: CheckCircle2, color: 'text-success-600' },
   ];
 
   const columns: Column<Claim>[] = [
     {
       header: 'Claim Number',
-      accessor: (c) => (
+      accessor: (c: Claim) => (
         <div className="flex flex-col">
           <span className="font-bold text-neutral-900">{c.claimNumber}</span>
           <span className="text-xs text-neutral-500">{c.type}</span>
@@ -56,7 +56,7 @@ const ClaimsDashboard: React.FC = () => {
     },
     {
       header: 'Incident Details',
-      accessor: (c) => (
+      accessor: (c: Claim) => (
         <div className="max-w-xs truncate">
           <p className="text-sm font-medium">{c.description}</p>
           <p className="text-xs text-neutral-400">{new Date(c.incidentDate).toLocaleDateString()}</p>
@@ -65,15 +65,15 @@ const ClaimsDashboard: React.FC = () => {
     },
     {
       header: 'Policy',
-      accessor: 'policyNumber',
+      accessor: 'policyNumber' as keyof Claim,
     },
     {
       header: 'Status',
-      accessor: (c) => {
+      accessor: (c: Claim) => {
         const variants: Record<string, any> = {
           PAID: 'success',
           AWAITING_CUSTOMER: 'warning',
-          UNDER_REVIEW: 'info',
+          UNDER_INVESTIGATION: 'info',
           REJECTED: 'danger',
           SUBMITTED: 'neutral'
         };

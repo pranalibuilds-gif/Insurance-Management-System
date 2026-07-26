@@ -1,20 +1,21 @@
 import { DocumentMetadata } from './document';
 
 export type ClaimStatus =
-  | 'DRAFT'
   | 'SUBMITTED'
-  | 'UNDER_REVIEW'
+  | 'UNDER_INVESTIGATION'
   | 'AWAITING_CUSTOMER'
+  | 'AWAITING_MANAGER'
   | 'VERIFIED'
   | 'APPROVED'
   | 'REJECTED'
-  | 'SETTLEMENT_INITIATED'
+  | 'SETTLEMENT_READY'
   | 'PAID'
   | 'CLOSED';
 
 export interface ClaimFinancials {
   requestedAmount: number;
   estimatedLoss: number;
+  recommendedAmount: number;
   approvedAmount: number;
   settlementAmount: number;
   settlementStatus: 'PENDING' | 'PROCESSING' | 'PAID' | 'FAILED';
@@ -33,22 +34,41 @@ export interface Claim {
   policyId: string;
   policyNumber: string;
   claimNumber: string;
+  customerId: string;
+  customerName: string;
   type: string;
   incidentDate: string;
   description: string;
   status: ClaimStatus;
+  priority: 'LOW' | 'MEDIUM' | 'HIGH' | 'URGENT';
+  slaDeadline: string;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ClaimWorkspace {
   summary: Claim;
+  policySummary: {
+    id: string;
+    number: string;
+    productName: string;
+    coverageLimit: number;
+    status: string;
+    waitingPeriodMet: boolean;
+  };
   financials: ClaimFinancials;
   evidence: DocumentMetadata[];
+  investigationNotes: string;
   timeline: ClaimTimelineEvent[];
+  riskIndicators: {
+    type: 'INFO' | 'WARNING' | 'DANGER';
+    label: string;
+  }[];
   actions: {
+    canApprove: boolean;
+    canReject: boolean;
+    canRequestInfo: boolean;
     canUploadEvidence: boolean;
-    canEdit: boolean;
-    canCancel: boolean;
+    canSettle: boolean;
   };
 }
