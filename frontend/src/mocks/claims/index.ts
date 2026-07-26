@@ -91,7 +91,7 @@ export const getClaimWorkspace = async (id: string): Promise<ClaimWorkspace | un
       { id: 'ev_2', type: 'ASSIGNED', description: 'Assigned to Sarah Adjuster', timestamp: '2026-07-21T10:00:00Z', actor: 'System' },
     ],
     riskIndicators: [
-      { type: 'INFO', label: 'First Claim' }
+      { type: 'INFO', label: 'First Claim', description: 'This is the first claim submitted by this customer.' }
     ],
     actions: {
       canApprove: claim.status === 'AWAITING_MANAGER',

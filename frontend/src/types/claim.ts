@@ -63,6 +63,7 @@ export interface ClaimWorkspace {
   riskIndicators: {
     type: 'INFO' | 'WARNING' | 'DANGER';
     label: string;
+    description: string;
   }[];
   actions: {
     canApprove: boolean;
