@@ -51,3 +51,39 @@ export interface UserSession {
   lastActive: string;
   isCurrent: boolean;
 }
+
+export interface InternalNote {
+  id: string;
+  author: string;
+  category: 'GENERAL' | 'KYC' | 'CLAIMS' | 'BILLING';
+  text: string;
+  timestamp: string;
+}
+
+export interface RiskIndicator {
+  type: 'INFO' | 'WARNING' | 'DANGER';
+  label: string;
+  description: string;
+}
+
+export interface CustomerWorkspace {
+  summary: {
+    id: string;
+    fullName: string;
+    kycStatus: KYCStatus;
+    accountStatus: CustomerStatus;
+    assignedAgent?: string;
+    customerSince: string;
+    riskFlag: 'NORMAL' | 'REVIEW' | 'HIGH_RISK';
+    activePolicyCount: number;
+    openClaimCount: number;
+    outstandingBalance: number;
+  };
+  kycDetails: {
+    checklist: { id: string; label: string; completed: boolean }[];
+    history: any[];
+  };
+  notes: InternalNote[];
+  riskIndicators: RiskIndicator[];
+  actions: string[];
+}

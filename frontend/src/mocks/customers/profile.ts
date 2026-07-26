@@ -1,4 +1,4 @@
-import { Customer, UserSession } from '../../types/customer';
+import { Customer, UserSession, CustomerWorkspace } from '../../types/customer';
 import { mockDelay } from '..';
 
 export const mockCustomerProfile: Customer = {
@@ -60,4 +60,41 @@ export const getCustomerProfile = async (): Promise<Customer> => {
 export const getSessions = async (): Promise<UserSession[]> => {
   await mockDelay();
   return mockSessions;
+};
+
+export const getCustomerWorkspace = async (id: string): Promise<CustomerWorkspace> => {
+  await mockDelay();
+  return {
+    summary: {
+      id: id || 'CUST-88291',
+      fullName: 'John Doe',
+      kycStatus: 'VERIFIED',
+      accountStatus: 'ACTIVE',
+      assignedAgent: 'Sarah Agent',
+      customerSince: '2026-01-01',
+      riskFlag: 'NORMAL',
+      activePolicyCount: 2,
+      openClaimCount: 1,
+      outstandingBalance: 1200,
+    },
+    kycDetails: {
+      checklist: [
+        { id: '1', label: 'Identity Proof Uploaded', completed: true },
+        { id: '2', label: 'Address Proof Uploaded', completed: true },
+        { id: '3', label: 'Facial Match Verified', completed: true },
+        { id: '4', label: 'AML Check Passed', completed: true },
+      ],
+      history: [
+        { date: '2026-02-10', action: 'KYC Verified', actor: 'Sarah Agent' },
+        { date: '2026-02-09', action: 'Documents Submitted', actor: 'John Doe' },
+      ],
+    },
+    notes: [
+      { id: '1', author: 'Sarah Agent', category: 'GENERAL', text: 'Customer requested information about premium discounts for multi-policy holders.', timestamp: '2026-03-15T10:00:00Z' },
+    ],
+    riskIndicators: [
+      { type: 'INFO', label: 'High Value Policy', description: 'Customer holds policies worth over $1M.' },
+    ],
+    actions: ['KYC_APPROVE', 'KYC_REJECT', 'SUSPEND_ACCOUNT', 'SEND_NOTIFICATION'],
+  };
 };

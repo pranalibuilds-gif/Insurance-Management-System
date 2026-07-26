@@ -19,6 +19,7 @@ const PurchaseWizard = lazy(() => import('../pages/portal/purchase/PurchaseWizar
 const PolicyList = lazy(() => import('../pages/portal/policies/PolicyList'));
 const PolicyDetail = lazy(() => import('../pages/portal/policies/PolicyDetail'));
 const StaffDashboard = lazy(() => import('../pages/staff/StaffDashboard'));
+const CustomerWorkspaceStaff = lazy(() => import('../pages/staff/CustomerWorkspace'));
 const ClaimsDashboard = lazy(() => import('../pages/portal/claims/ClaimsDashboard'));
 const ClaimDetail = lazy(() => import('../pages/portal/claims/ClaimDetail'));
 const ClaimWizard = lazy(() => import('../pages/portal/claims/ClaimWizard'));
@@ -130,6 +131,7 @@ export const AppRoutes: React.FC = () => {
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<StaffDashboard />} />
           <Route path="customers" element={<div>Customer Management</div>} />
+          <Route path="customers/:id" element={<CustomerWorkspaceStaff />} />
           <Route path="policies" element={<div>Policy Management</div>} />
           <Route path="claims" element={<div>Claims Queue</div>} />
           <Route path="products" element={<div>Product Builder</div>} />
