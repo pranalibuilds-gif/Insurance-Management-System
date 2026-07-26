@@ -10,7 +10,8 @@ import {
   FileText,
   Clock,
   ArrowRight,
-  Info
+  Info,
+  ExternalLink
 } from 'lucide-react';
 import { PageHeader } from '../../../components/molecules/PageHeader';
 import { Button } from '../../../components/atoms/Button';

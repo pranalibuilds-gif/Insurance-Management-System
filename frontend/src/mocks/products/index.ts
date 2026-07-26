@@ -1,4 +1,4 @@
-import { InsuranceProduct } from '../../types/product';
+import { InsuranceProduct, ProductWorkspace } from '../../types/product';
 import { mockDelay } from '..';
 
 export const mockProducts: InsuranceProduct[] = [
@@ -8,7 +8,8 @@ export const mockProducts: InsuranceProduct[] = [
     category: 'HEALTH',
     shortDescription: 'Comprehensive health coverage for you and your family.',
     description: 'Our most popular health plan offering extensive coverage for hospitalization, day-care procedures, and wellness benefits.',
-    status: 'RECOMMENDED',
+    status: 'ACTIVE',
+    version: 1,
     minCoverage: 300000,
     maxCoverage: 2500000,
     basePremium: 450,
@@ -38,7 +39,8 @@ export const mockProducts: InsuranceProduct[] = [
     category: 'VEHICLE',
     shortDescription: 'Maximum protection for your car against accidents and theft.',
     description: 'Comprehensive motor insurance including third-party liability and own-damage protection with zero depreciation add-on.',
-    status: 'AVAILABLE',
+    status: 'ACTIVE',
+    version: 2,
     minCoverage: 100000,
     maxCoverage: 5000000,
     basePremium: 120,
@@ -64,33 +66,29 @@ export const mockProducts: InsuranceProduct[] = [
   },
   {
     id: 'prod_3',
-    name: 'Term Life Essential',
+    name: 'Term Life Essential (Draft)',
     category: 'LIFE',
     shortDescription: 'High-value life coverage at affordable premiums.',
-    description: 'Ensure your family financial future with a high sum assured term life plan. Simple and effective protection.',
-    status: 'NEW',
+    description: 'Ensure your family financial future with a high sum assured term life plan.',
+    status: 'DRAFT',
+    version: 1,
     minCoverage: 1000000,
     maxCoverage: 100000000,
     basePremium: 800,
     waitingPeriodDays: 0,
     premiumFrequencies: ['QUARTERLY', 'HALF_YEARLY', 'YEARLY'],
-    requiredDocuments: ['Identity Proof', 'Income Proof', 'Recent Photograph'],
-    exclusions: ['Suicide within first year', 'Hazardous activities'],
+    requiredDocuments: ['Identity Proof', 'Income Proof'],
+    exclusions: ['Suicide within first year'],
     eligibility: {
       minAge: 18,
       maxAge: 55,
       requiresKYC: true,
       residencyType: 'Permanent Resident',
-      specialConditions: ['Non-smokers preferred for best rates'],
     },
-    features: [
-      { title: 'Death Benefit', description: 'Lump sum payout to nominees.', isIncluded: true },
-      { title: 'Terminal Illness', description: 'Early payout upon diagnosis of terminal illness.', isIncluded: true },
-      { title: 'Tax Benefits', description: 'Save taxes under section 80C.', isIncluded: true },
-    ],
+    features: [],
     isRecommended: false,
-    createdAt: '2026-01-05T00:00:00Z',
-    updatedAt: '2026-01-05T00:00:00Z',
+    createdAt: '2026-07-20T00:00:00Z',
+    updatedAt: '2026-07-20T00:00:00Z',
   }
 ];
 
@@ -102,4 +100,34 @@ export const getProducts = async (): Promise<InsuranceProduct[]> => {
 export const getProductById = async (id: string): Promise<InsuranceProduct | undefined> => {
   await mockDelay();
   return mockProducts.find(p => p.id === id);
+};
+
+export const getProductWorkspace = async (id: string): Promise<ProductWorkspace | undefined> => {
+  await mockDelay();
+  const product = mockProducts.find(p => p.id === id);
+  if (!product) return undefined;
+
+  return {
+    summary: product,
+    versionHistory: [
+      { id: 'v1_prod_1', version: 1, status: 'ACTIVE', createdAt: product.createdAt, publishedAt: product.createdAt, publishedBy: 'admin@imp.com' }
+    ],
+    validation: {
+      isGeneralComplete: true,
+      isCoverageComplete: product.maxCoverage > 0,
+      isPremiumComplete: product.basePremium > 0,
+      isEligibilityComplete: true,
+      isDocsComplete: product.requiredDocuments.length > 0,
+      isExclusionsComplete: product.exclusions.length > 0,
+      isValidForPublish: product.status === 'DRAFT' || product.status === 'UNDER_REVIEW'
+    },
+    actions: {
+      canEdit: ['DRAFT', 'UNDER_REVIEW'].includes(product.status),
+      canSubmitForReview: product.status === 'DRAFT',
+      canApprove: product.status === 'UNDER_REVIEW',
+      canDeprecate: product.status === 'ACTIVE',
+      canClone: true,
+      canArchive: ['DEPRECATED', 'DRAFT'].includes(product.status),
+    }
+  };
 };

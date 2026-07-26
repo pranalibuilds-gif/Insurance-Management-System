@@ -13,12 +13,16 @@ interface ProductCardProps {
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({ product, className }) => {
-  const statusVariants = {
+  const statusVariants: Record<string, any> = {
     AVAILABLE: 'neutral',
     NEW: 'info',
     RECOMMENDED: 'brand',
     INACTIVE: 'neutral',
-  } as const;
+    DRAFT: 'brand',
+    UNDER_REVIEW: 'warning',
+    DEPRECATED: 'neutral',
+    ARCHIVED: 'danger'
+  };
 
   return (
     <Card

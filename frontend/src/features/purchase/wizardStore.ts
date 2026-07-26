@@ -67,9 +67,9 @@ export const evaluateEligibility = (
   const isCoverageValid = draft.coverageAmount >= product.minCoverage && draft.coverageAmount <= product.maxCoverage;
 
   // Document check: every required product document must be attached
-  const hasRequiredDocuments = product.requiredDocuments.every(reqDoc =>
+  const hasRequiredDocuments = product.requiredDocuments?.every(reqDoc =>
     draft.attachedDocuments.some(attDoc => attDoc.documentType.toLowerCase().includes(reqDoc.toLowerCase()) || attDoc.fileName.toLowerCase().includes(reqDoc.toLowerCase()))
-  );
+  ) || false;
 
   return {
     isAgeEligible,
