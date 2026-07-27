@@ -20,7 +20,8 @@ import { Badge } from '../../../components/atoms/Badge';
 import { Alert } from '../../../components/molecules/Alert';
 import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
 import { LoadingSkeleton } from '../../../components/molecules/LoadingSkeleton';
-import { getProductById } from '../../../mocks/products';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import { cn } from '../../../utils/cn';
 
 const ProductDetails: React.FC = () => {
@@ -28,8 +29,8 @@ const ProductDetails: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'coverage' | 'eligibility' | 'exclusions'>('overview');
 
   const { data: product, isLoading } = useQuery({
-    queryKey: ['product', id],
-    queryFn: () => getProductById(id!),
+    queryKey: QUERY_KEYS.PRODUCTS.DETAIL(id!),
+    queryFn: () => serviceFactory.getProductService().getProductById(id!),
     enabled: !!id,
   });
 

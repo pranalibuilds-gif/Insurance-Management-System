@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios';
+import { mapStatusToErrorCode, ErrorCode } from './errors';
 
 export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
 
@@ -35,8 +36,8 @@ apiClient.interceptors.response.use(
     }
 
     return Promise.reject({
-      code: 'UNEXPECTED_ERROR',
-      message: 'An unexpected error occurred. Please try again later.',
+      code: mapStatusToErrorCode(error.response?.status),
+      message: 'An error occurred while communicating with the server.',
       details: error.message
     });
   }

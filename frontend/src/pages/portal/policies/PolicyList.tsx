@@ -8,7 +8,8 @@ import { Button } from '../../../components/atoms/Button';
 import { SearchBar } from '../../../components/molecules/SearchBar';
 import { Card } from '../../../components/atoms/Card';
 import { LoadingSkeleton } from '../../../components/molecules/LoadingSkeleton';
-import { getCustomerPolicies } from '../../../mocks/policies';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import { Policy } from '../../../types/policy';
 import { Shield, ArrowRight, Filter, Search } from 'lucide-react';
 import { cn } from '../../../utils/cn';
@@ -18,8 +19,8 @@ const PolicyList: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: policies, isLoading } = useQuery({
-    queryKey: ['policies'],
-    queryFn: () => getCustomerPolicies('cust_1'),
+    queryKey: QUERY_KEYS.POLICIES.MY,
+    queryFn: () => serviceFactory.getPolicyService().listMyPolicies(),
   });
 
   const filteredPolicies = policies?.filter((p: Policy) =>

@@ -5,7 +5,8 @@ import { PageHeader } from '../../../components/molecules/PageHeader';
 import { ProductCard } from '../../../components/organisms/ProductCard';
 import { LoadingSkeleton } from '../../../components/molecules/LoadingSkeleton';
 import { EmptyState } from '../../../components/molecules/EmptyState';
-import { getProducts } from '../../../mocks/products';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import { Search, Filter, SlidersHorizontal } from 'lucide-react';
 import { Button } from '../../../components/atoms/Button';
 import { ProductCategory } from '../../../types/product';
@@ -25,8 +26,8 @@ const ProductList: React.FC = () => {
   const [selectedCategory, setSelectedCategory] = useState<ProductCategory | 'ALL'>('ALL');
 
   const { data: products, isLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: getProducts,
+    queryKey: QUERY_KEYS.PRODUCTS.LIST,
+    queryFn: () => serviceFactory.getProductService().listProducts(),
   });
 
   const filteredProducts = products?.filter((p) => {

@@ -22,7 +22,8 @@ import { Badge } from '../../../components/atoms/Badge';
 import { DataTable, Column } from '../../../components/organisms/DataTable';
 import { LoadingSkeleton } from '../../../components/molecules/LoadingSkeleton';
 import { Alert } from '../../../components/molecules/Alert';
-import { getPolicyWorkspace } from '../../../mocks/policies';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import { cn } from '../../../utils/cn';
 import { PremiumInstallment } from '../../../types/billing';
 import { Claim } from '../../../types/claim';
@@ -32,8 +33,8 @@ const PolicyDetail: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'schedule' | 'documents' | 'claims' | 'timeline'>('overview');
 
   const { data: workspace, isLoading } = useQuery({
-    queryKey: ['policy-workspace', id],
-    queryFn: () => getPolicyWorkspace(id!),
+    queryKey: QUERY_KEYS.POLICIES.WORKSPACE(id!),
+    queryFn: () => serviceFactory.getPolicyService().getPolicyWorkspace(id!),
     enabled: !!id,
   });
 
