@@ -3,20 +3,21 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exceptions import IMPException, imp_exception_handler
 from app.api.v1.api import api_router
+from app.api.middleware import LoggingMiddleware
+from app.core.logging import setup_logging
 import structlog
 
-# Logger Setup
-structlog.configure(
-    processors=[
-        structlog.processors.JSONRenderer()
-    ]
-)
+# Initialize Logging
+setup_logging()
 logger = structlog.get_logger()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
 )
+
+# Middleware
+app.add_middleware(LoggingMiddleware)
 
 app.add_exception_handler(IMPException, imp_exception_handler)
 
