@@ -16,7 +16,7 @@ export const WelcomeCard: React.FC<WelcomeCardProps> = ({ kycStatus }) => {
       <Card.Content className="p-8 text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="space-y-2">
-            <h2 className="text-3xl font-bold">Good morning, {user?.name}!</h2>
+            <h2 className="text-3xl font-bold">Good morning, {user?.full_name}!</h2>
             <p className="text-brand-100 max-w-md">
               Welcome back to your insurance workspace. Here's a quick look at your active coverage and pending actions.
             </p>

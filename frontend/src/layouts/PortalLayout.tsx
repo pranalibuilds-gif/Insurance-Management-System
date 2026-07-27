@@ -18,7 +18,7 @@ export const PortalLayout: React.FC = () => {
   }));
 
   const userData = user ? {
-    name: user.email.split('@')[0], // Mock name
+    name: user.full_name,
     role: user.role,
   } : null;
 

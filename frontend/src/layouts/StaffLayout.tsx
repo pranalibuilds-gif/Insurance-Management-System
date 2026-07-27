@@ -4,6 +4,7 @@ import { Sidebar } from '../components/organisms/Sidebar';
 import { Topbar } from '../components/organisms/Topbar';
 import { staffNavigation } from '../config/navigation/staff';
 import { useAuth } from '../context/AuthContext';
+import { UserRole } from '../mocks/auth';
 
 export const StaffLayout: React.FC = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -18,16 +19,16 @@ export const StaffLayout: React.FC = () => {
   }));
 
   const userData = user ? {
-    name: user.email.split('@')[0],
+    name: user.full_name,
     role: user.role,
   } : null;
 
   const filteredPrimary = staffNavigation.primary.filter(item =>
-    !item.roles || (user && item.roles.includes(user.role))
+    !item.roles || (user && item.roles.includes(user.role as UserRole))
   );
 
   const filteredFooter = staffNavigation.footer?.filter(item =>
-    !item.roles || (user && item.roles.includes(user.role))
+    !item.roles || (user && item.roles.includes(user.role as UserRole))
   );
 
   return (

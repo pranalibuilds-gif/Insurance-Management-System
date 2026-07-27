@@ -1,29 +1,54 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { UserRole, MockUser } from '../mocks/auth';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { UserRead, UserLogin } from '../types/auth';
+import { serviceFactory } from '../services/serviceFactory';
 
 interface AuthContextType {
-  user: MockUser | null;
+  user: UserRead | null;
   isAuthenticated: boolean;
-  login: (userData: MockUser) => void;
+  isLoading: boolean;
+  login: (data: UserLogin) => Promise<void>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<MockUser | null>(null);
+const authService = serviceFactory.getAuthService();
 
-  const login = (userData: MockUser) => {
+export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<UserRead | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const initAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (token) {
+        try {
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+        } catch (error) {
+          localStorage.removeItem('auth_token');
+        }
+      }
+      setIsLoading(false);
+    };
+
+    initAuth();
+  }, []);
+
+  const login = async (data: UserLogin) => {
+    await authService.login(data);
+    const userData = await authService.getCurrentUser();
     setUser(userData);
   };
 
   const logout = () => {
+    authService.logout();
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, login, logout }}
+      value={{ user, isAuthenticated: !!user, isLoading, login, logout }}
     >
       {children}
     </AuthContext.Provider>

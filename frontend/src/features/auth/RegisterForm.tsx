@@ -6,6 +6,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import toast from 'react-hot-toast';
+import { serviceFactory } from '../../services/serviceFactory';
 
 const registerSchema = z.object({
   firstName: z.string().min(2, 'First name is required'),
@@ -36,12 +37,16 @@ export const RegisterForm: React.FC = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      console.log('Registering with:', data);
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const authService = serviceFactory.getAuthService();
+      await authService.register({
+        email: data.email,
+        password: data.password,
+        full_name: `${data.firstName} ${data.lastName}`,
+      });
       toast.success('Registration successful! Please login.');
       navigate('/login');
-    } catch (error) {
-      toast.error('Registration failed. Please try again.');
+    } catch (error: any) {
+      toast.error(error.message || 'Registration failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

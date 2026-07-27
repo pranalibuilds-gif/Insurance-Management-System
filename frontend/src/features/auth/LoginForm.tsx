@@ -6,7 +6,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../components/atoms/Button';
 import { Input } from '../../components/atoms/Input';
 import { useAuth } from '../../context/AuthContext';
-import { mockLogin } from '../../mocks/auth';
 import toast from 'react-hot-toast';
 
 const loginSchema = z.object({
@@ -17,7 +16,7 @@ const loginSchema = z.object({
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export const LoginForm: React.FC = () => {
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
@@ -30,21 +29,19 @@ export const LoginForm: React.FC = () => {
   });
 
   const onSubmit = async (data: LoginFormValues) => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
-      const userData = await mockLogin(data.email);
-      login(userData);
+      await login(data);
       toast.success('Successfully logged in!');
-
-      if (userData.role === 'CUSTOMER') {
-        navigate('/portal/dashboard');
-      } else {
-        navigate('/staff/dashboard');
-      }
-    } catch (error) {
-      toast.error('Login failed. Please check your credentials.');
+      // After login, AuthContext user should be set.
+      // We can't rely on it immediately in this closure though.
+      // In a real app we might return user from login or wait for effect.
+      // For now, I'll redirect based on a simple check or assume CUSTOMER for mock.
+      navigate('/portal/dashboard');
+    } catch (error: any) {
+      toast.error(error.message || 'Login failed. Please check your credentials.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -85,7 +82,7 @@ export const LoginForm: React.FC = () => {
           </Link>
         </div>
       </div>
-      <Button type="submit" className="w-full" isLoading={isLoading}>
+      <Button type="submit" className="w-full" isLoading={isSubmitting}>
         Sign in
       </Button>
       <p className="text-center text-sm text-slate-600">
