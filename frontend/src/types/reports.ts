@@ -27,6 +27,11 @@ export interface ClaimsAnalyticsVM {
   claimsByCategory: { name: string; value: number }[];
 }
 
+export interface OperationalReportVM {
+  summary: MetricCardData[];
+  processingTimes: { stage: string; hours: number }[];
+}
+
 export interface CustomerAnalyticsVM {
   summary: MetricCardData[];
   customerGrowth: { month: string; count: number }[];

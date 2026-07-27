@@ -36,6 +36,11 @@ const BillingCenter: React.FC = () => {
     { id: '2', customer: 'Alice Smith', policy: 'IMP-VEH-042', amount: 450, date: '2026-07-20', status: 'PENDING', method: 'BANK_TRANSFER' },
   ];
 
+  const mockRefunds = [
+    { id: 'rf1', customer: 'Bob Jones', policy: 'IMP-HEA-505', amount: 120, date: '2026-07-19', status: 'PROCESSING', reason: 'Overpayment' },
+    { id: 'rf2', customer: 'Dave Wilson', policy: 'IMP-VEH-112', amount: 45, date: '2026-07-15', status: 'COMPLETED', reason: 'Cancellation' },
+  ];
+
   return (
     <WorkspaceShell
       title="Billing & Finance"
@@ -117,13 +122,31 @@ const BillingCenter: React.FC = () => {
         </Card>
       )}
 
-      {['refunds', 'disbursements'].includes(activeTab) && (
+      {activeTab === 'refunds' && (
+        <Card className="animate-entrance">
+           <Card.Header><h4 className="font-bold">Refund Requests</h4></Card.Header>
+           <Card.Content className="p-0">
+              <DataTable
+                columns={[
+                  { header: 'Date', accessor: 'date' },
+                  { header: 'Customer', accessor: 'customer' },
+                  { header: 'Reason', accessor: 'reason' },
+                  { header: 'Amount', accessor: (i: any) => <strong>${i.amount}</strong> },
+                  { header: 'Status', accessor: (i: any) => <Badge variant={i.status === 'COMPLETED' ? 'success' : 'info'}>{i.status}</Badge> },
+                ]}
+                data={mockRefunds}
+              />
+           </Card.Content>
+        </Card>
+      )}
+
+      {activeTab === 'disbursements' && (
         <div className="p-20 text-center space-y-4">
            <div className="h-16 w-16 bg-neutral-50 rounded-full flex items-center justify-center mx-auto text-neutral-300">
-              <CreditCard className="h-8 w-8" />
+              <CheckCircle2 className="h-8 w-8" />
            </div>
-           <h4 className="font-bold text-neutral-900">{tabs.find(t => t.id === activeTab)?.label} Queue Coming Soon</h4>
-           <p className="text-sm text-neutral-500 max-w-xs mx-auto">This module is being integrated with our payment gateway provider.</p>
+           <h4 className="font-bold text-neutral-900">No Pending Disbursements</h4>
+           <p className="text-sm text-neutral-500 max-w-xs mx-auto">All approved claims and refunds have been processed for today.</p>
         </div>
       )}
     </WorkspaceShell>

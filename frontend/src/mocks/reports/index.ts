@@ -3,7 +3,8 @@ import {
   FinancialReportVM,
   ClaimsAnalyticsVM,
   CustomerAnalyticsVM,
-  ProductAnalyticsVM
+  ProductAnalyticsVM,
+  OperationalReportVM
 } from '../../types/reports';
 import { mockDelay } from '..';
 
@@ -78,6 +79,64 @@ export const getClaimsAnalytics = async (): Promise<ClaimsAnalyticsVM> => {
       { name: 'Accident', value: 120 },
       { name: 'Theft', value: 80 },
       { name: 'Other', value: 75 },
+    ]
+  };
+};
+
+export const getOperationalReport = async (): Promise<OperationalReportVM> => {
+  await mockDelay();
+  return {
+    summary: [
+      { label: 'Avg KYC Review', value: '4.2h', trend: { value: 15, isPositive: true } },
+      { label: 'Avg Claim Settlement', value: '3.5d', trend: { value: 5, isPositive: true } },
+      { label: 'Active Adjusters', value: '12' },
+      { label: 'Open Tasks', value: '84' },
+    ],
+    processingTimes: [
+      { stage: 'Submission', hours: 1 },
+      { stage: 'Investigation', hours: 48 },
+      { stage: 'Manager Approval', hours: 24 },
+      { stage: 'Settlement', hours: 12 },
+    ]
+  };
+};
+
+export const getCustomerAnalytics = async (): Promise<CustomerAnalyticsVM> => {
+  await mockDelay();
+  return {
+    summary: [
+      { label: 'Total Customers', value: '1,450', trend: { value: 8, isPositive: true } },
+      { label: 'Verified (KYC)', value: '1,120' },
+      { label: 'Retention Rate', value: '94%' },
+      { label: 'High Risk', value: '12' },
+    ],
+    customerGrowth: [
+      { month: 'Jan', count: 1200 },
+      { month: 'Feb', count: 1280 },
+      { month: 'Mar', count: 1350 },
+      { month: 'Apr', count: 1450 },
+    ],
+    kycDistribution: [
+      { name: 'Verified', value: 80 },
+      { name: 'Pending', value: 15 },
+      { name: 'Rejected', value: 5 },
+    ]
+  };
+};
+
+export const getProductAnalytics = async (): Promise<ProductAnalyticsVM> => {
+  await mockDelay();
+  return {
+    summary: [
+      { label: 'Top Product', value: 'Health Secure' },
+      { label: 'Total Revenue', value: '$2.4M' },
+      { label: 'Avg Policy Value', value: '$1,920' },
+      { label: 'Renewal Rate', value: '88%' },
+    ],
+    performanceByProduct: [
+      { name: 'Health Secure', sales: 450, lossRatio: 32 },
+      { name: 'Vehicle Protect', sales: 320, lossRatio: 45 },
+      { name: 'Life Essential', sales: 180, lossRatio: 12 },
     ]
   };
 };
