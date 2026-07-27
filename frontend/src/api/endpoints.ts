@@ -42,4 +42,11 @@ export const ENDPOINTS = {
     LIST: '/notifications',
     MARK_READ: (id: string) => `/notifications/${id}/read`,
   },
+  PURCHASE: {
+    DRAFTS: '/purchase/drafts',
+    DRAFT_DETAIL: (id: string) => `/purchase/drafts/${id}`,
+    VALIDATE: (id: string) => `/purchase/drafts/${id}/validate`,
+    PAYMENT: (id: string) => `/purchase/drafts/${id}/payment`,
+    SUBMIT: (id: string) => `/purchase/drafts/${id}/submit`,
+  },
 };

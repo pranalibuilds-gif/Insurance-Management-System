@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '../../../components/molecules/PageHeader';
 import { Button } from '../../../components/atoms/Button';
 import { Card } from '../../../components/atoms/Card';
@@ -8,21 +8,13 @@ import { Badge } from '../../../components/atoms/Badge';
 import { Spinner } from '../../../components/atoms/Spinner';
 import { Alert } from '../../../components/molecules/Alert';
 import { EligibilitySummary } from '../../../components/molecules/EligibilitySummary';
-import { getProductById } from '../../../mocks/products';
-import { getCustomerProfile } from '../../../mocks/customers';
-import { getDocuments } from '../../../mocks/documents';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import {
-  saveDraft,
-  getDraft,
-  calculatePremiumSnapshot,
-  evaluateEligibility,
   generatePurchaseReference,
   mapNomineeToPurchase,
-  buildPurchaseReview,
-  clearDraft,
-  updateWorkflowStatus
 } from '../../../features/purchase/wizardStore';
-import { PurchaseDraft, StepStatus, PurchaseDocumentReference, PurchaseReview, PurchaseNominee } from '../../../types/wizard';
+import { PurchaseDraft, StepStatus, PurchaseDocumentReference, PurchaseNominee } from '../../../types/wizard';
 import {
   CheckCircle2,
   ChevronRight,
@@ -38,7 +30,8 @@ import {
   Receipt,
   ArrowRightCircle,
   XCircle,
-  Clock
+  Clock,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '../../../utils/cn';
 import toast from 'react-hot-toast';
@@ -57,80 +50,80 @@ const steps = [
 const PurchaseWizard: React.FC = () => {
   const { id: productId } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [currentStep, setCurrentStep] = useState(1);
-  const [draft, setDraft] = useState<PurchaseDraft | null>(null);
+  const [draftId, setDraftId] = useState<string | null>(null);
+
+  const purchaseService = serviceFactory.getPurchaseService();
 
   const { data: product, isLoading: isLoadingProduct } = useQuery({
-    queryKey: ['product', productId],
-    queryFn: () => getProductById(productId!),
+    queryKey: QUERY_KEYS.PRODUCTS.DETAIL(productId!),
+    queryFn: () => serviceFactory.getProductService().getProductById(productId!),
     enabled: !!productId,
   });
 
   const { data: customer } = useQuery({
-    queryKey: ['customer-profile'],
-    queryFn: getCustomerProfile,
+    queryKey: QUERY_KEYS.CUSTOMERS.PROFILE,
+    queryFn: () => serviceFactory.getCustomerService().getProfile(),
   });
 
   const { data: userDocuments } = useQuery({
-    queryKey: ['documents'],
-    queryFn: getDocuments,
+    queryKey: QUERY_KEYS.DOCUMENTS.LIST,
+    queryFn: () => serviceFactory.getDocumentService().listDocuments(),
+  });
+
+  const { data: draft, isLoading: isLoadingDraft } = useQuery({
+    queryKey: QUERY_KEYS.PURCHASE.DRAFT(draftId!),
+    queryFn: () => purchaseService.getDraft(draftId!),
+    enabled: !!draftId,
+  });
+
+  const createDraftMutation = useMutation({
+    mutationFn: (pid: string) => purchaseService.createDraft(pid),
+    onSuccess: (newDraft) => {
+      setDraftId(newDraft.purchaseReference);
+    }
+  });
+
+  const updateDraftMutation = useMutation({
+    mutationFn: (data: Partial<PurchaseDraft>) => purchaseService.updateDraft(draftId!, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PURCHASE.DRAFT(draftId!) });
+    }
+  });
+
+  const validateEligibilityQuery = useQuery({
+    queryKey: QUERY_KEYS.PURCHASE.ELIGIBILITY(draftId!),
+    queryFn: () => purchaseService.validateEligibility(draftId!),
+    enabled: !!draftId && currentStep === 3,
+  });
+
+  const calculatePremiumQuery = useQuery({
+    queryKey: QUERY_KEYS.PURCHASE.PRICING(draftId!),
+    queryFn: () => purchaseService.calculatePremium(draftId!),
+    enabled: !!draftId && currentStep >= 2,
+  });
+
+  const reviewQuery = useQuery({
+    queryKey: QUERY_KEYS.PURCHASE.REVIEW(draftId!),
+    queryFn: () => purchaseService.getReview(draftId!),
+    enabled: !!draftId && currentStep === 6,
   });
 
   useEffect(() => {
-    const savedDraft = getDraft();
-    if (savedDraft && savedDraft.productId === productId && !savedDraft.isSubmitted) {
-      setDraft(savedDraft);
-      setCurrentStep(savedDraft.currentStep);
-      toast('Resumed your purchase progress.', { icon: '🔄' });
-    } else if (product) {
-      const initialDraft: PurchaseDraft = {
-        productId: product.id,
-        coverageAmount: product.minCoverage,
-        premiumFrequency: product.premiumFrequencies[0],
-        selectedNominees: [],
-        attachedDocuments: [],
-        declarationsAccepted: false,
-        currentStep: 1,
-        stepStatuses: { 1: 'IN_PROGRESS' },
-        paymentStatus: 'NOT_STARTED',
-        workflowStatus: 'DRAFT',
-        purchaseReference: generatePurchaseReference(),
-        lastSaved: new Date().toISOString(),
-        isComplete: false,
-        isSubmitted: false,
-      };
-      setDraft(initialDraft);
+    if (productId && !draftId && !createDraftMutation.isPending) {
+       createDraftMutation.mutate(productId);
     }
-  }, [product, productId]);
+  }, [productId]);
 
-  useEffect(() => {
-    if (draft && product && customer && !draft.isSubmitted) {
-      const pricing = calculatePremiumSnapshot(draft.coverageAmount, draft.premiumFrequency);
-      const eligibility = evaluateEligibility(product, customer, draft);
-
-      const updated: PurchaseDraft = {
-        ...draft,
-        pricingSnapshot: pricing,
-        eligibilitySnapshot: eligibility,
-        workflowStatus: updateWorkflowStatus(draft),
-        lastSaved: new Date().toISOString()
-      };
-
-      if (JSON.stringify(updated) !== JSON.stringify(draft)) {
-        setDraft(updated);
-        saveDraft(updated);
-      }
-    }
-  }, [draft?.coverageAmount, draft?.premiumFrequency, draft?.selectedNominees, draft?.attachedDocuments, draft?.declarationsAccepted, product, customer]);
-
-  const handleNext = () => {
+  const handleNext = async () => {
     if (currentStep < steps.length) {
       const nextStep = currentStep + 1;
-      const updatedStatuses = { ...draft?.stepStatuses, [currentStep]: 'COMPLETED' as StepStatus, [nextStep]: 'IN_PROGRESS' as StepStatus };
+      await updateDraftMutation.mutateAsync({
+        currentStep: nextStep,
+        stepStatuses: { ...draft?.stepStatuses, [currentStep]: 'COMPLETED', [nextStep]: 'IN_PROGRESS' }
+      });
       setCurrentStep(nextStep);
-      if (draft) {
-        setDraft({ ...draft, currentStep: nextStep, stepStatuses: updatedStatuses });
-      }
     }
   };
 
@@ -141,64 +134,26 @@ const PurchaseWizard: React.FC = () => {
   };
 
   const handlePayment = async () => {
-    if (!draft) return;
+    if (!draftId || !draft) return;
 
-    setDraft({ ...draft, paymentStatus: 'PROCESSING' });
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      await purchaseService.processPayment(draftId, {
+        method: 'CREDIT_CARD',
+        amount: draft.pricingSnapshot?.totalAmount || 0,
+        currency: 'USD'
+      });
+      await purchaseService.submitPurchase(draftId);
 
-    // Mock simulation for different results
-    const rand = Math.random();
-    if (rand > 0.2) {
-      const updatedDraft: PurchaseDraft = {
-        ...draft,
-        paymentStatus: 'SUCCESS',
-        isSubmitted: true,
-        currentStep: 8,
-        stepStatuses: { ...draft.stepStatuses, 7: 'COMPLETED', 8: 'IN_PROGRESS' }
-      };
-      setDraft(updatedDraft);
-      saveDraft(updatedDraft);
-      toast.success('Payment Successful!');
+      toast.success('Purchase Successful!');
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.POLICIES.MY });
       setCurrentStep(8);
-    } else if (rand > 0.1) {
-      setDraft({ ...draft, paymentStatus: 'FAILED' });
-      toast.error('Payment Failed. Insufficient funds.');
-    } else {
-      setDraft({ ...draft, paymentStatus: 'TIMEOUT' });
-      toast.error('Payment timed out. Please check your connection.');
+    } catch (error: any) {
+      toast.error(error.message || 'Payment failed');
     }
   };
 
-  const finalizePurchase = () => {
-    clearDraft();
-    navigate('/portal/policies');
-  };
+  if (isLoadingProduct || isLoadingDraft || !draft || !product || !customer) return <Spinner variant="centered" />;
 
-  const toggleNominee = (nominee: any) => {
-    if (!draft) return;
-    const isSelected = draft.selectedNominees.some(n => n.id === nominee.id);
-    if (isSelected) {
-      setDraft({ ...draft, selectedNominees: draft.selectedNominees.filter(n => n.id !== nominee.id) });
-    } else {
-      setDraft({ ...draft, selectedNominees: [...draft.selectedNominees, mapNomineeToPurchase(nominee)] });
-    }
-  };
-
-  const attachDocument = (doc: any, type: string) => {
-    if (!draft) return;
-    const newRef: PurchaseDocumentReference = {
-      documentId: doc.id,
-      documentType: type,
-      version: doc.currentVersion,
-      verificationStatus: doc.status,
-      fileName: doc.versions[0].fileName,
-    };
-    setDraft({ ...draft, attachedDocuments: [...draft.attachedDocuments.filter(d => d.documentType !== type), newRef] });
-  };
-
-  if (isLoadingProduct || !draft || !product || !customer) return <Spinner variant="centered" />;
-
-  const review = buildPurchaseReview(draft, product, customer);
   const totalNomineeShare = draft.selectedNominees.reduce((acc, n) => acc + n.sharePercentage, 0);
 
   return (
@@ -264,9 +219,6 @@ const PurchaseWizard: React.FC = () => {
                         <p className="text-sm text-neutral-600">{product.shortDescription}</p>
                       </div>
                     </div>
-                    <Alert variant="info">
-                      You are currently configuring this plan. You can change your product selection back in the catalogue.
-                    </Alert>
                 </div>
               )}
 
@@ -283,7 +235,7 @@ const PurchaseWizard: React.FC = () => {
                       max={product.maxCoverage}
                       step={50000}
                       value={draft.coverageAmount}
-                      onChange={(e) => setDraft({...draft, coverageAmount: Number(e.target.value)})}
+                      onChange={(e) => updateDraftMutation.mutate({ coverageAmount: Number(e.target.value) })}
                       className="w-full h-3 bg-neutral-100 rounded-lg appearance-none cursor-pointer accent-brand-600"
                     />
                   </div>
@@ -294,7 +246,7 @@ const PurchaseWizard: React.FC = () => {
                       {product.premiumFrequencies.map(freq => (
                         <button
                           key={freq}
-                          onClick={() => setDraft({...draft, premiumFrequency: freq})}
+                          onClick={() => updateDraftMutation.mutate({ premiumFrequency: freq })}
                           className={cn(
                             "px-4 py-4 rounded-xl border-2 text-xs font-bold transition-all",
                             draft.premiumFrequency === freq
@@ -310,14 +262,11 @@ const PurchaseWizard: React.FC = () => {
                 </div>
               )}
 
-              {currentStep === 3 && (
+              {currentStep === 3 && validateEligibilityQuery.data && (
                 <div className="space-y-6 animate-entrance">
-                  <Alert variant="info" title="Pre-Purchase Validation">
-                    Our system is verifying your eligibility for the {product.name} based on your profile and selected coverage.
-                  </Alert>
                   <EligibilitySummary
                     eligibility={product.eligibility}
-                    customerAge={35}
+                    customerAge={35} // In real app use customer dob
                     isKYCVerified={customer?.kycStatus === 'VERIFIED'}
                     hasDocuments={draft.attachedDocuments.length > 0}
                   />
@@ -326,20 +275,18 @@ const PurchaseWizard: React.FC = () => {
 
               {currentStep === 4 && (
                 <div className="space-y-6 animate-entrance">
-                  <div className="flex justify-between items-center">
-                    <h4 className="font-bold text-neutral-900">Select Policy Nominees</h4>
-                    <Badge variant={totalNomineeShare === 100 ? 'success' : 'warning'}>
-                      Allocation: {totalNomineeShare}%
-                    </Badge>
-                  </div>
-
                   <div className="grid grid-cols-1 gap-4">
                     {customer?.nominees.map(n => {
                       const isSelected = draft.selectedNominees.some(sn => sn.id === n.id);
                       return (
                         <div
                           key={n.id}
-                          onClick={() => toggleNominee(n)}
+                          onClick={() => {
+                            const updated = isSelected
+                              ? draft.selectedNominees.filter(sn => sn.id !== n.id)
+                              : [...draft.selectedNominees, mapNomineeToPurchase(n)];
+                            updateDraftMutation.mutate({ selectedNominees: updated });
+                          }}
                           className={cn(
                             "p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-center justify-between",
                             isSelected ? "border-brand-600 bg-brand-50" : "border-neutral-100 hover:border-neutral-200"
@@ -358,107 +305,29 @@ const PurchaseWizard: React.FC = () => {
                       );
                     })}
                   </div>
-
-                  {totalNomineeShare !== 100 && (
-                    <Alert variant="warning">
-                      Total nominee allocation must equal exactly 100%. Current: {totalNomineeShare}%
-                    </Alert>
-                  )}
                 </div>
               )}
 
-              {currentStep === 5 && (
+              {currentStep === 6 && reviewQuery.data && (
                 <div className="space-y-8 animate-entrance">
-                  <div className="space-y-2">
-                    <h4 className="font-bold text-neutral-900">Required Documents</h4>
-                    <p className="text-sm text-neutral-500">Attach existing documents from your vault or upload new ones.</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    {product.requiredDocuments.map(reqDoc => {
-                      const attached = draft.attachedDocuments.find(d => d.documentType === reqDoc);
-                      const available = userDocuments?.find(d => d.title.toLowerCase().includes(reqDoc.toLowerCase()) || d.category.toLowerCase().includes(reqDoc.toLowerCase()));
-
-                      return (
-                        <Card key={reqDoc} variant="outlined">
-                          <Card.Content className="p-5 flex items-center justify-between">
-                            <div className="flex items-center gap-4">
-                              <div className={cn("p-2.5 rounded-xl", attached ? "bg-success-50 text-success-600" : "bg-neutral-100 text-neutral-400")}>
-                                <FileText className="h-5 w-5" />
-                              </div>
-                              <div>
-                                <p className="font-bold text-neutral-900">{reqDoc}</p>
-                                {attached ? (
-                                  <p className="text-xs text-success-600 flex items-center gap-1 font-medium">
-                                    <CheckCircle2 className="h-3 w-3" /> Attached: {attached.fileName}
-                                  </p>
-                                ) : (
-                                  <p className="text-xs text-neutral-400">Not attached</p>
-                                )}
-                              </div>
-                            </div>
-
-                            <div className="flex gap-2">
-                              {!attached && available && (
-                                <Button size="sm" variant="outline" onClick={() => attachDocument(available, reqDoc)}>
-                                  <Paperclip className="h-4 w-4 mr-2" /> Use Existing
-                                </Button>
-                              )}
-                              <Button size="sm" variant={attached ? 'ghost' : 'outline'} className={attached ? 'text-neutral-400' : ''}>
-                                {attached ? 'Replace' : 'Upload New'}
-                              </Button>
-                            </div>
-                          </Card.Content>
-                        </Card>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 6 && (
-                <div className="space-y-8 animate-entrance">
-                  <Alert variant="info" title="Review your Policy details">
-                    Please ensure all information below is correct. Once submitted, your application will be processed.
-                  </Alert>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
                        <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Customer & Plan</h5>
                        <div className="space-y-2">
-                          <p className="text-sm"><span className="text-neutral-500">Applicant:</span> <span className="font-bold">{review.customer.fullName}</span></p>
-                          <p className="text-sm"><span className="text-neutral-500">Product:</span> <span className="font-bold">{review.product.name}</span></p>
-                          <p className="text-sm"><span className="text-neutral-500">Coverage:</span> <span className="font-bold">${review.coverage.amount.toLocaleString()}</span></p>
-                          <p className="text-sm"><span className="text-neutral-500">Billing:</span> <span className="font-bold">{review.coverage.frequency}</span></p>
-                       </div>
-                    </div>
-                    <div className="space-y-4">
-                       <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Beneficiaries</h5>
-                       <div className="space-y-2">
-                          {review.nominees.map((n: PurchaseNominee) => (
-                            <div key={n.id} className="flex justify-between text-sm">
-                               <span className="text-neutral-500">{n.fullName} ({n.relationship})</span>
-                               <span className="font-bold">{n.sharePercentage}%</span>
-                            </div>
-                          ))}
+                          <p className="text-sm"><span className="text-neutral-500">Applicant:</span> <span className="font-bold">{reviewQuery.data.customer.fullName}</span></p>
+                          <p className="text-sm"><span className="text-neutral-500">Product:</span> <span className="font-bold">{reviewQuery.data.product.name}</span></p>
                        </div>
                     </div>
                   </div>
-
-                  <div className="pt-6 border-t border-neutral-100 space-y-4">
-                    <h5 className="font-bold text-neutral-900 uppercase tracking-widest text-[10px]">Declarations</h5>
-                    <div className="space-y-3">
-                      {review.declarations.map((decl: any) => (
-                        <div key={decl.id} className="flex items-start gap-3">
-                           <input
-                              type="checkbox"
-                              checked={decl.isAccepted}
-                              onChange={() => setDraft({...draft, declarationsAccepted: !draft.declarationsAccepted})}
-                              className="mt-1 h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
-                           />
-                           <label className="text-sm text-neutral-600 leading-tight">{decl.text}</label>
-                        </div>
-                      ))}
+                  <div className="pt-6 border-t border-neutral-100">
+                    <div className="flex items-start gap-3">
+                       <input
+                          type="checkbox"
+                          checked={draft.declarationsAccepted}
+                          onChange={() => updateDraftMutation.mutate({ declarationsAccepted: !draft.declarationsAccepted })}
+                          className="mt-1 h-4 w-4 rounded border-neutral-300 text-brand-600 focus:ring-brand-500"
+                       />
+                       <label className="text-sm text-neutral-600">I confirm that all information provided is accurate.</label>
                     </div>
                   </div>
                 </div>
@@ -466,112 +335,22 @@ const PurchaseWizard: React.FC = () => {
 
               {currentStep === 7 && (
                 <div className="flex flex-col items-center justify-center py-12 space-y-8 animate-entrance">
-                   {draft.paymentStatus === 'PROCESSING' ? (
-                      <>
-                        <div className="relative">
-                          <Spinner size="lg" />
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <CreditCard className="h-6 w-6 text-brand-600" />
-                          </div>
-                        </div>
-                        <div className="text-center space-y-2">
-                          <h4 className="text-xl font-bold text-neutral-900">Processing Payment...</h4>
-                          <p className="text-sm text-neutral-500">Please do not refresh or close the browser.</p>
-                        </div>
-                      </>
-                   ) : draft.paymentStatus === 'FAILED' ? (
-                      <div className="flex flex-col items-center text-center space-y-6">
-                        <div className="h-20 w-20 rounded-full bg-danger-50 flex items-center justify-center text-danger-600">
-                           <XCircle className="h-10 w-10" />
-                        </div>
-                        <div className="space-y-2">
-                          <h4 className="text-2xl font-bold text-neutral-900">Payment Failed</h4>
-                          <p className="text-sm text-neutral-500">Something went wrong with your transaction. Please try again.</p>
-                        </div>
-                        <Button onClick={() => setDraft({...draft, paymentStatus: 'NOT_STARTED'})}>
-                          Try Again
-                        </Button>
-                      </div>
-                   ) : draft.paymentStatus === 'TIMEOUT' ? (
-                      <div className="flex flex-col items-center text-center space-y-6">
-                        <div className="h-20 w-20 rounded-full bg-warning-50 flex items-center justify-center text-warning-600">
-                           <Clock className="h-10 w-10" />
-                        </div>
-                        <div className="space-y-2">
-                          <h4 className="text-2xl font-bold text-neutral-900">Payment Timeout</h4>
-                          <p className="text-sm text-neutral-500">The session has timed out. Please retry the payment.</p>
-                        </div>
-                        <Button onClick={() => setDraft({...draft, paymentStatus: 'NOT_STARTED'})}>
-                          Retry Payment
-                        </Button>
-                      </div>
-                   ) : (
-                      <>
-                        <div className="h-20 w-20 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
-                          <CreditCard className="h-10 w-10" />
-                        </div>
-                        <div className="text-center space-y-4 max-w-sm">
-                          <h4 className="text-2xl font-bold text-neutral-900">Complete Purchase</h4>
-                          <p className="text-sm text-neutral-500 leading-relaxed">
-                            You are about to authorize a payment of <span className="font-bold text-neutral-900">${draft.pricingSnapshot?.totalAmount.toLocaleString()}</span> for your first installment.
-                          </p>
-                        </div>
-                        <Button size="lg" className="w-full max-w-xs" onClick={handlePayment}>
-                          Pay & Authorize
-                        </Button>
-                      </>
-                   )}
+                   <div className="h-20 w-20 rounded-full bg-brand-50 flex items-center justify-center text-brand-600">
+                      <CreditCard className="h-10 w-10" />
+                   </div>
+                   <Button size="lg" className="w-full max-w-xs" onClick={handlePayment}>
+                      Pay & Authorize
+                   </Button>
                 </div>
               )}
 
               {currentStep === 8 && (
-                <div className="py-8 space-y-10 animate-entrance">
-                   <div className="flex flex-col items-center text-center space-y-4">
-                      <div className="h-20 w-20 rounded-full bg-success-50 flex items-center justify-center text-success-600 border-4 border-success-100">
-                         <CheckCircle2 className="h-12 w-12" />
-                      </div>
-                      <div className="space-y-2">
-                        <h3 className="text-3xl font-black text-neutral-900">Purchase Submitted!</h3>
-                        <p className="text-neutral-500">Your application is being processed by our underwriting team.</p>
-                      </div>
+                <div className="py-8 space-y-10 animate-entrance text-center">
+                   <div className="h-20 w-20 rounded-full bg-success-50 flex items-center justify-center text-success-600 border-4 border-success-100 mx-auto">
+                      <CheckCircle2 className="h-12 w-12" />
                    </div>
-
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <Card variant="outlined">
-                        <Card.Content className="p-6 space-y-4">
-                           <div className="flex items-center gap-2 text-neutral-400 font-bold uppercase tracking-widest text-[10px]">
-                              <ClipboardCheck className="h-4 w-4" /> Submission Reference
-                           </div>
-                           <p className="text-xl font-mono font-bold text-neutral-900">{draft.purchaseReference}</p>
-                           <div className="flex justify-between items-center text-sm border-t border-neutral-50 pt-4">
-                              <span className="text-neutral-500">Policy Status</span>
-                              <Badge variant="info">Pending Issuance</Badge>
-                           </div>
-                        </Card.Content>
-                      </Card>
-
-                      <Card variant="outlined">
-                        <Card.Content className="p-6 space-y-4">
-                           <div className="flex items-center gap-2 text-neutral-400 font-bold uppercase tracking-widest text-[10px]">
-                              <Receipt className="h-4 w-4" /> Payment Status
-                           </div>
-                           <p className="text-xl font-bold text-success-600">Successful</p>
-                           <div className="flex justify-between items-center text-sm border-t border-neutral-50 pt-4">
-                              <span className="text-neutral-500">Transaction ID</span>
-                              <span className="font-mono text-neutral-900">TXN-{Math.floor(Math.random()*1000000)}</span>
-                           </div>
-                        </Card.Content>
-                      </Card>
-                   </div>
-
-                   <div className="flex flex-col sm:flex-row gap-4 justify-center pt-8 border-t border-neutral-100">
-                      <Button variant="outline" onClick={() => window.print()}>
-                        <FileText className="h-4 w-4 mr-2" /> Download Summary
-                      </Button>
-                      <Button onClick={finalizePurchase}>
-                        Go to My Policies <ArrowRightCircle className="h-4 w-4 ml-2" />
-                      </Button>
-                   </div>
+                   <h3 className="text-3xl font-black text-neutral-900">Purchase Submitted!</h3>
+                   <Button onClick={() => navigate('/portal/policies')}>Go to My Policies</Button>
                 </div>
               )}
             </Card.Content>
@@ -579,15 +358,15 @@ const PurchaseWizard: React.FC = () => {
 
           {currentStep < 8 && (
             <div className="flex items-center justify-between">
-              <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1 || draft.paymentStatus === 'PROCESSING'}>
+              <Button variant="ghost" onClick={handleBack} disabled={currentStep === 1}>
                 <ChevronLeft className="h-4 w-4 mr-2" /> Previous Step
               </Button>
               <Button
                 onClick={handleNext}
+                isLoading={updateDraftMutation.isPending}
                 disabled={
                   currentStep >= 7 ||
                   (currentStep === 4 && totalNomineeShare !== 100) ||
-                  (currentStep === 5 && !draft.eligibilitySnapshot?.hasRequiredDocuments) ||
                   (currentStep === 6 && !draft.declarationsAccepted)
                 }
               >
@@ -599,7 +378,7 @@ const PurchaseWizard: React.FC = () => {
         </div>
 
         {/* Sidebar Summary */}
-        {currentStep < 8 && (
+        {currentStep < 8 && calculatePremiumQuery.data && (
           <div className="space-y-6 lg:sticky lg:top-24">
             <Card className="bg-neutral-900 text-white border-none shadow-xl">
               <Card.Header className="border-white/10 bg-white/5">
@@ -610,27 +389,9 @@ const PurchaseWizard: React.FC = () => {
                   <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest mb-1">Estimated Premium</p>
                   <div className="flex items-baseline justify-center gap-1">
                     <span className="text-4xl font-black text-white">
-                      ${draft.pricingSnapshot?.totalAmount.toLocaleString()}
+                      ${calculatePremiumQuery.data.totalAmount.toLocaleString()}
                     </span>
                     <span className="text-neutral-500 text-xs font-bold">/{draft.premiumFrequency.toLowerCase()}</span>
-                  </div>
-                </div>
-
-                <div className="space-y-4 pt-6 border-t border-white/10">
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Eligibility</p>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Profile Verified</span>
-                      {draft.eligibilitySnapshot?.isKYCVerified ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <AlertCircle className="h-3.5 w-3.5 text-warning-500" />}
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Nominees (100%)</span>
-                      {draft.eligibilitySnapshot?.hasNomineesAllocated ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
-                    </div>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-neutral-400">Documents</span>
-                      {draft.eligibilitySnapshot?.hasRequiredDocuments ? <CheckCircle2 className="h-3.5 w-3.5 text-success-500" /> : <div className="h-3.5 w-3.5 rounded-full border border-neutral-700" />}
-                    </div>
                   </div>
                 </div>
               </Card.Content>

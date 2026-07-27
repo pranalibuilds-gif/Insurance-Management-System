@@ -39,6 +39,12 @@ export const QUERY_KEYS = {
   NOTIFICATIONS: {
     LIST: ['notifications', 'list'],
   },
+  PURCHASE: {
+    DRAFT: (id: string) => ['purchase', 'draft', id],
+    ELIGIBILITY: (id: string) => ['purchase', 'eligibility', id],
+    PRICING: (id: string) => ['purchase', 'pricing', id],
+    REVIEW: (id: string) => ['purchase', 'review', id],
+  },
   STAFF: {
     DASHBOARD: ['staff', 'dashboard'],
     REPORTS: ['staff', 'reports'],
