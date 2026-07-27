@@ -87,6 +87,13 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
+### 5. Generate Demo Data (Optional)
+Populate the database with 4-6 years of simulated operational history:
+```bash
+cd backend
+python -m app.seeds.seed
+```
+
 ---
 
 ## 🔮 Future Expansion (Roadmap)
