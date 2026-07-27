@@ -15,7 +15,17 @@ export const QUERY_KEYS = {
   },
   CUSTOMERS: {
     PROFILE: ['customers', 'profile'],
+    ADDRESS: ['customers', 'address'],
+    NOMINEES: ['customers', 'nominees'],
+    ACTIVITY: ['customers', 'activity'],
+    KYC: ['customers', 'kyc'],
+    SESSIONS: ['customers', 'sessions'],
     WORKSPACE: (id: string) => ['customers', 'workspace', id],
+  },
+  DOCUMENTS: {
+    LIST: ['documents', 'list'],
+    DETAIL: (id: string) => ['documents', 'detail', id],
+    CATEGORIES: ['documents', 'categories'],
   },
   CLAIMS: {
     LIST: ['claims', 'list'],

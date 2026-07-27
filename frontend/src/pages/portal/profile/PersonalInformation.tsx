@@ -8,7 +8,8 @@ import { Button } from '../../../components/atoms/Button';
 import { Input } from '../../../components/atoms/Input';
 import { FormField } from '../../../components/molecules/FormField';
 import { LoadingSkeleton } from '../../../components/molecules/LoadingSkeleton';
-import { getCustomerProfile } from '../../../mocks/customers';
+import { serviceFactory } from '../../../services/serviceFactory';
+import { QUERY_KEYS } from '../../../api/queryKeys';
 import toast from 'react-hot-toast';
 
 const personalInfoSchema = z.object({
@@ -24,8 +25,8 @@ type PersonalInfoValues = z.infer<typeof personalInfoSchema>;
 const PersonalInformation: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const { data: customer, isLoading } = useQuery({
-    queryKey: ['customer-profile'],
-    queryFn: getCustomerProfile,
+    queryKey: QUERY_KEYS.CUSTOMERS.PROFILE,
+    queryFn: () => serviceFactory.getCustomerService().getProfile(),
   });
 
   const {
@@ -46,8 +47,7 @@ const PersonalInformation: React.FC = () => {
 
   const onSubmit = async (data: PersonalInfoValues) => {
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Updating profile:', data);
+      await serviceFactory.getCustomerService().updateProfile(data);
       toast.success('Profile updated successfully');
       setIsEditing(false);
     } catch (error) {

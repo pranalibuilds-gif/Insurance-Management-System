@@ -17,9 +17,15 @@ export const ENDPOINTS = {
     MY: '/policies/my',
   },
   CUSTOMERS: {
-    PROFILE: '/customers/profile',
+    ME: '/customers/me',
+    PROFILE: '/customers/me/profile',
     WORKSPACE: (id: string) => `/customers/${id}/workspace`,
     DOCUMENTS: (id: string) => `/customers/${id}/documents`,
+  },
+  DOCUMENTS: {
+    LIST: '/documents',
+    DETAIL: (id: string) => `/documents/${id}`,
+    CATEGORIES: '/documents/categories',
   },
   CLAIMS: {
     LIST: '/claims',
