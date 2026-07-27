@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 from app.core.exceptions import IMPException, imp_exception_handler
+from app.api.v1.api import api_router
 import structlog
 
 # Logger Setup
@@ -18,6 +19,8 @@ app = FastAPI(
 )
 
 app.add_exception_handler(IMPException, imp_exception_handler)
+
+app.include_router(api_router, prefix=settings.API_V1_STR)
 
 # CORS
 if settings.BACKEND_CORS_ORIGINS:

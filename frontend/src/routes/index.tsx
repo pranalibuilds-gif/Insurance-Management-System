@@ -19,15 +19,18 @@ const PurchaseWizard = lazy(() => import('../pages/portal/purchase/PurchaseWizar
 const PolicyList = lazy(() => import('../pages/portal/policies/PolicyList'));
 const PolicyDetail = lazy(() => import('../pages/portal/policies/PolicyDetail'));
 const StaffDashboard = lazy(() => import('../pages/staff/StaffDashboard'));
+const CustomerListStaff = lazy(() => import('../pages/staff/CustomerList'));
 const CustomerWorkspaceStaff = lazy(() => import('../pages/staff/CustomerWorkspace'));
 const PolicyListStaff = lazy(() => import('../pages/staff/PolicyList'));
 const PolicyWorkspaceStaff = lazy(() => import('../pages/staff/PolicyWorkspace'));
 const ProductListStaff = lazy(() => import('../pages/staff/ProductList'));
 const ProductBuilderStaff = lazy(() => import('../pages/staff/ProductBuilder'));
+const BillingCenter = lazy(() => import('../pages/staff/billing/BillingCenter'));
 const UserManagement = lazy(() => import('../pages/staff/users/UserManagement'));
 const AuditCenter = lazy(() => import('../pages/staff/audit/AuditCenter'));
 const SystemSettings = lazy(() => import('../pages/staff/system/SystemSettings'));
 const ReportsDashboard = lazy(() => import('../pages/staff/reports/ReportsDashboard'));
+const StaffNotifications = lazy(() => import('../pages/staff/notifications/StaffNotifications'));
 const ClaimsQueue = lazy(() => import('../pages/staff/ClaimsQueue'));
 const ClaimWorkspaceStaff = lazy(() => import('../pages/staff/ClaimWorkspace'));
 const ClaimsDashboard = lazy(() => import('../pages/portal/claims/ClaimsDashboard'));
@@ -140,7 +143,7 @@ export const AppRoutes: React.FC = () => {
         >
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<StaffDashboard />} />
-          <Route path="customers" element={<div>Customer Management</div>} />
+          <Route path="customers" element={<CustomerListStaff />} />
           <Route path="customers/:id" element={<CustomerWorkspaceStaff />} />
           <Route path="policies" element={<PolicyListStaff />} />
           <Route path="policies/:id" element={<PolicyWorkspaceStaff />} />
@@ -148,11 +151,12 @@ export const AppRoutes: React.FC = () => {
           <Route path="claims/:id" element={<ClaimWorkspaceStaff />} />
           <Route path="products" element={<ProductListStaff />} />
           <Route path="products/:id" element={<ProductBuilderStaff />} />
+          <Route path="billing" element={<BillingCenter />} />
           <Route path="reports" element={<ReportsDashboard />} />
           <Route path="users" element={<UserManagement />} />
           <Route path="audit" element={<AuditCenter />} />
           <Route path="settings" element={<SystemSettings />} />
-          <Route path="notifications" element={<div>Staff Alerts</div>} />
+          <Route path="notifications" element={<StaffNotifications />} />
         </Route>
 
         {/* Fallback */}
