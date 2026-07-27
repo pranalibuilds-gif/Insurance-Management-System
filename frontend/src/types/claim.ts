@@ -46,6 +46,15 @@ export interface Claim {
   updatedAt: string;
 }
 
+export interface ClaimCreate {
+  policyId: string;
+  incidentDate: string;
+  description: string;
+  type: string;
+  requestedAmount: number;
+  documents?: string[]; // IDs
+}
+
 export interface ClaimWorkspace {
   summary: Claim;
   policySummary: {

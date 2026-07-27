@@ -16,6 +16,18 @@ import { IDocumentService } from './documents/documentService';
 import { ApiPurchaseService } from './purchase/apiPurchaseService';
 import { MockPurchaseService } from './purchase/mockPurchaseService';
 import { IPurchaseService } from './purchase/purchaseService';
+import { ApiBillingService } from './billing/apiBillingService';
+import { MockBillingService } from './billing/mockBillingService';
+import { IBillingService } from './billing/billingService';
+import { ApiClaimService } from './claims/apiClaimService';
+import { MockClaimService } from './claims/mockClaimService';
+import { IClaimService } from './claims/claimService';
+import { ApiNotificationService } from './notifications/apiNotificationService';
+import { MockNotificationService } from './notifications/mockNotificationService';
+import { INotificationService } from './notifications/notificationService';
+import { ApiAdminService } from './admin/apiAdminService';
+import { MockAdminService } from './admin/mockAdminService';
+import { IAdminService } from './admin/adminService';
 
 const isMock = import.meta.env.VITE_USE_MOCKS === 'true';
 
@@ -26,6 +38,10 @@ class ServiceFactory {
   private customerService: ICustomerService;
   private documentService: IDocumentService;
   private purchaseService: IPurchaseService;
+  private billingService: IBillingService;
+  private claimService: IClaimService;
+  private notificationService: INotificationService;
+  private adminService: IAdminService;
 
   constructor() {
     this.authService = isMock ? new MockAuthService() : new ApiAuthService();
@@ -34,6 +50,10 @@ class ServiceFactory {
     this.customerService = isMock ? new MockCustomerService() : new ApiCustomerService();
     this.documentService = isMock ? new MockDocumentService() : new ApiDocumentService();
     this.purchaseService = isMock ? new MockPurchaseService() : new ApiPurchaseService();
+    this.billingService = isMock ? new MockBillingService() : new ApiBillingService();
+    this.claimService = isMock ? new MockClaimService() : new ApiClaimService();
+    this.notificationService = isMock ? new MockNotificationService() : new ApiNotificationService();
+    this.adminService = isMock ? new MockAdminService() : new ApiAdminService();
   }
 
   getAuthService(): IAuthService { return this.authService; }
@@ -42,6 +62,10 @@ class ServiceFactory {
   getCustomerService(): ICustomerService { return this.customerService; }
   getDocumentService(): IDocumentService { return this.documentService; }
   getPurchaseService(): IPurchaseService { return this.purchaseService; }
+  getBillingService(): IBillingService { return this.billingService; }
+  getClaimService(): IClaimService { return this.claimService; }
+  getNotificationService(): INotificationService { return this.notificationService; }
+  getAdminService(): IAdminService { return this.adminService; }
 }
 
 export const serviceFactory = new ServiceFactory();
