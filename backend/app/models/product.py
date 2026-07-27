@@ -7,10 +7,10 @@ class Product(Base, AuditMixin):
     __tablename__ = "products"
 
     id: Mapped[pk_uuid]
-    name: Mapped[str] = mapped_column(String(255), nullable=False)
-    category: Mapped[str] = mapped_column(String(50), nullable=False)
+    name: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     description: Mapped[str] = mapped_column(String(1000), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="DRAFT")
+    status: Mapped[str] = mapped_column(String(50), default="DRAFT", index=True)
     version: Mapped[int] = mapped_column(Integer, default=1)
     min_coverage: Mapped[float] = mapped_column(Float, nullable=False)
     max_coverage: Mapped[float] = mapped_column(Float, nullable=False)
@@ -20,7 +20,7 @@ class Product(Base, AuditMixin):
     premium_frequencies: Mapped[List[str]] = mapped_column(JSON, default=list)
     exclusions: Mapped[List[str]] = mapped_column(JSON, default=list)
     eligibility: Mapped[dict] = mapped_column(JSON, nullable=False)
-    is_active: Mapped[bool] = mapped_column(Boolean, default=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
 
     # Relationships
     policies: Mapped[List["Policy"]] = relationship(back_populates="product")

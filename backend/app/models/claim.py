@@ -10,8 +10,8 @@ class Claim(Base, AuditMixin):
 
     id: Mapped[pk_uuid]
     claim_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    policy_id: Mapped[UUID] = mapped_column(ForeignKey("policies.id"), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="SUBMITTED")
+    policy_id: Mapped[UUID] = mapped_column(ForeignKey("policies.id", ondelete="CASCADE"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), default="SUBMITTED", index=True)
     incident_date: Mapped[date] = mapped_column(Date, nullable=False)
     description: Mapped[str] = mapped_column(String(1000), nullable=False)
     requested_amount: Mapped[float] = mapped_column(Float, nullable=False)

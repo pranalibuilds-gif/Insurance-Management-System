@@ -8,9 +8,12 @@ from app.core.exceptions import IMPException
 from fastapi import status
 from uuid import UUID
 
+from app.services.audit import AuditService
+
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
+        self.audit = AuditService(db)
 
     async def register_user(self, user_in: UserCreate) -> User:
         # Check if email exists
@@ -50,6 +53,16 @@ class AuthService:
 
         await self.db.commit()
         await self.db.refresh(db_user)
+
+        await self.audit.log_event(
+            actor=db_user.email,
+            action="CREATED",
+            category="SECURITY",
+            entity_type="USER",
+            entity_id=str(db_user.id),
+            details={"message": "User registered", "role": db_user.role}
+        )
+
         return db_user
 
     async def authenticate(self, email: str, password: str) -> User:

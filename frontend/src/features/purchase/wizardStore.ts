@@ -1,19 +1,19 @@
 import { PurchaseDraft, PurchaseNominee } from '../../types/wizard';
 import { Nominee } from '../../types/customer';
 
-const STORAGE_KEY = 'imp_purchase_draft';
+import { STORAGE_KEYS } from '../../config/constants';
 
 export const saveLocalDraft = (draft: PurchaseDraft) => {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+  localStorage.setItem(STORAGE_KEYS.PURCHASE_DRAFT, JSON.stringify(draft));
 };
 
 export const getLocalDraft = (): PurchaseDraft | null => {
-  const data = localStorage.getItem(STORAGE_KEY);
+  const data = localStorage.getItem(STORAGE_KEYS.PURCHASE_DRAFT);
   return data ? JSON.parse(data) : null;
 };
 
 export const clearLocalDraft = () => {
-  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(STORAGE_KEYS.PURCHASE_DRAFT);
 };
 
 export const mapNomineeToPurchase = (nominee: Nominee): PurchaseNominee => {

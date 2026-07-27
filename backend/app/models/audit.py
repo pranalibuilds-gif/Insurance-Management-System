@@ -9,11 +9,11 @@ class AuditLog(Base):
     __tablename__ = "audit_logs"
 
     id: Mapped[pk_uuid]
-    timestamp: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"))
-    actor: Mapped[str] = mapped_column(String(255), nullable=False)
-    action: Mapped[str] = mapped_column(String(50), nullable=False)
-    category: Mapped[str] = mapped_column(String(50), nullable=False)
-    entity_type: Mapped[str] = mapped_column(String(50), nullable=False)
-    entity_id: Mapped[str] = mapped_column(String(50), nullable=False)
+    timestamp: Mapped[datetime] = mapped_column(server_default=text("TIMEZONE('utc', now())"), index=True)
+    actor: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    action: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    category: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entity_type: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
+    entity_id: Mapped[str] = mapped_column(String(50), nullable=False, index=True)
     details: Mapped[dict] = mapped_column(JSON, nullable=False)
     ip_address: Mapped[str] = mapped_column(String(50), nullable=False)

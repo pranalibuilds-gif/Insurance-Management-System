@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { UserRead, UserLogin } from '../types/auth';
 import { serviceFactory } from '../services/serviceFactory';
+import { STORAGE_KEYS } from '../config/constants';
 
 interface AuthContextType {
   user: UserRead | null;
@@ -20,13 +21,13 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
 
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('auth_token');
+      const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
       if (token) {
         try {
           const userData = await authService.getCurrentUser();
           setUser(userData);
         } catch (error) {
-          localStorage.removeItem('auth_token');
+          localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
         }
       }
       setIsLoading(false);

@@ -1,19 +1,18 @@
 import axios, { AxiosError } from 'axios';
 import { mapStatusToErrorCode, ErrorCode } from './errors';
-
-export const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api/v1';
+import { API_CONFIG, STORAGE_KEYS } from '../config/constants';
 
 const apiClient = axios.create({
-  baseURL: API_BASE_URL,
+  baseURL: API_CONFIG.BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
-  timeout: 10000,
+  timeout: API_CONFIG.TIMEOUT_MS,
 });
 
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN);
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -26,8 +25,8 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('auth_token');
-      // Redirect to login could be handled here or in a hook
+      localStorage.removeItem(STORAGE_KEYS.AUTH_TOKEN);
+      // Redirect logic...
     }
 
     const businessError = (error.response?.data as any)?.error;

@@ -9,13 +9,13 @@ class Customer(Base, AuditMixin):
     __tablename__ = "customers"
 
     id: Mapped[pk_uuid]
-    user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id"), unique=True, nullable=True)
+    user_id: Mapped[Optional[UUID]] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"), unique=True, nullable=True)
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    phone: Mapped[str] = mapped_column(String(20), unique=True, index=True, nullable=False)
     dob: Mapped[date] = mapped_column(Date, nullable=False)
-    kyc_status: Mapped[str] = mapped_column(String(50), default="NOT_SUBMITTED")
-    status: Mapped[str] = mapped_column(String(50), default="REGISTERED")
+    kyc_status: Mapped[str] = mapped_column(String(50), default="NOT_SUBMITTED", index=True)
+    status: Mapped[str] = mapped_column(String(50), default="REGISTERED", index=True)
     address: Mapped[dict] = mapped_column(JSON, nullable=False)
 
     # Relationships

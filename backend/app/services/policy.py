@@ -12,7 +12,19 @@ class PolicyService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
-    async def issue_policy(self, customer_id: uuid.UUID, policy_in: PolicyCreate) -> Policy:
+    async def issue_policy(self, user_id: uuid.UUID, policy_in: PolicyCreate) -> Policy:
+        # Validate Customer and Ownership
+        from app.models.customer import Customer
+        query = select(Customer).where(Customer.id == policy_in.customer_id)
+        result = await self.db.execute(query)
+        customer = result.scalar_one_or_none()
+
+        if not customer:
+            raise IMPException("Customer not found", status_code=status.HTTP_404_NOT_FOUND)
+
+        if customer.user_id != user_id:
+            raise IMPException("Unauthorized customer reference", status_code=status.HTTP_403_FORBIDDEN)
+
         # Validate Product
         query = select(Product).where(Product.id == policy_in.product_id)
         result = await self.db.execute(query)

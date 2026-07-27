@@ -8,27 +8,26 @@ import { StatCard } from '../../components/molecules/StatCard';
 import { PageHeader } from '../../components/molecules/PageHeader';
 import { LoadingSkeleton } from '../../components/molecules/LoadingSkeleton';
 import { Shield, Clock, FileCheck } from 'lucide-react';
-import { getCustomerProfile } from '../../mocks/customers';
-import { getCustomerPolicies } from '../../mocks/policies';
-import { getCustomerClaims } from '../../mocks/claims';
+import { serviceFactory } from '../../services/serviceFactory';
+import { QUERY_KEYS } from '../../api/queryKeys';
 import { Policy } from '../../types/policy';
 
 const CustomerDashboard: React.FC = () => {
   const { data: customer, isLoading: isLoadingCustomer } = useQuery({
-    queryKey: ['customer-profile'],
-    queryFn: getCustomerProfile,
+    queryKey: QUERY_KEYS.CUSTOMERS.PROFILE,
+    queryFn: () => serviceFactory.getCustomerService().getProfile(),
   });
 
   const { data: policies, isLoading: isLoadingPolicies } = useQuery({
-    queryKey: ['customer-policies', customer?.id],
-    queryFn: () => getCustomerPolicies(customer!.id),
-    enabled: !!customer?.id,
+    queryKey: QUERY_KEYS.POLICIES.MY,
+    queryFn: () => serviceFactory.getPolicyService().listMyPolicies(),
+    enabled: !!customer,
   });
 
   const { data: claims, isLoading: isLoadingClaims } = useQuery({
-    queryKey: ['customer-claims', policies?.map((p: Policy) => p.id)],
-    queryFn: () => getCustomerClaims(policies!.map((p: Policy) => p.id)),
-    enabled: !!policies && policies.length > 0,
+    queryKey: QUERY_KEYS.CLAIMS.LIST,
+    queryFn: () => serviceFactory.getClaimService().getClaims(),
+    enabled: !!customer,
   });
 
   const isLoading = isLoadingCustomer || isLoadingPolicies || isLoadingClaims;

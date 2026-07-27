@@ -10,12 +10,12 @@ class Policy(Base, AuditMixin):
 
     id: Mapped[pk_uuid]
     policy_number: Mapped[str] = mapped_column(String(50), unique=True, index=True, nullable=False)
-    customer_id: Mapped[UUID] = mapped_column(ForeignKey("customers.id"), nullable=False)
-    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id"), nullable=False)
-    status: Mapped[str] = mapped_column(String(50), default="ACTIVE")
+    customer_id: Mapped[UUID] = mapped_column(ForeignKey("customers.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id: Mapped[UUID] = mapped_column(ForeignKey("products.id"), nullable=False, index=True)
+    status: Mapped[str] = mapped_column(String(50), default="ACTIVE", index=True)
     coverage_amount: Mapped[float] = mapped_column(Float, nullable=False)
     premium_frequency: Mapped[str] = mapped_column(String(50), nullable=False)
-    premium_status: Mapped[str] = mapped_column(String(50), default="PAID")
+    premium_status: Mapped[str] = mapped_column(String(50), default="PAID", index=True)
     start_date: Mapped[date] = mapped_column(Date, nullable=False)
     end_date: Mapped[date] = mapped_column(Date, nullable=False)
     nominee_ids: Mapped[List[UUID]] = mapped_column(JSON, default=list)
