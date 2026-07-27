@@ -1,64 +1,53 @@
 # Insurance Management Platform (IMP) v1.0.0
 
-**Status: Development Complete**
+**Status: Engineering Frozen**
 
-The Insurance Management Platform (IMP) is a full-stack, enterprise-grade application designed for the modern insurance industry. It follows a strictly modular monolith architecture, providing comprehensive portals for both customers and operational staff.
+The Insurance Management Platform (IMP) is a full-stack, enterprise-grade application built with a **Modular Monolith** architecture. It provides a complete end-to-end solution for insurance acquisition, claim investigation, and operational governance.
 
-## 🚀 Key Features
-
-### Customer Portal
-- **Identity & KYC**: Complete onboarding with identity verification and document vault.
-- **Product Catalog**: Dynamic insurance plans with eligibility checking.
-- **Purchase Wizard**: 8-step transactional workflow with immutable snapshots and integrated payments.
-- **Policy Management**: Self-service workspace for coverage overview, timeline, and documents.
-- **Claims Center**: Comprehensive claim submission and tracking with evidence management.
-- **Billing & Payments**: Financial dashboard with installment tracking and receipt downloads.
-
-### Staff Portal (RBAC-driven)
-- **Role-based Dashboards**: Custom views for Agents (Operations), Managers (Governance), and Admins (System).
-- **Customer 360**: Centralized workspace for KYC review and customer administrative actions.
-- **Claims Investigative Workspace**: Decision-driven case management with financial adjustment tools.
-- **Policy Administration**: Global contract management and change history.
-- **Product Builder**: Versioned design tool for configuring new insurance offerings.
-- **Reports & Analytics**: Business intelligence hub for revenue, loss ratios, and SLA monitoring.
-
-## 🏗️ Architecture
-
-The platform is built on a **Modular Monolith** pattern, ensuring high cohesion and loose coupling between business domains.
-
-### Frontend (React 18 + Vite)
-- **Atomic Design System**: Reusable components (`StatCard`, `DataTable`, `WorkspaceShell`).
-- **Service/Repository Pattern**: Decoupled UI from data-fetching logic.
-- **State Management**: TanStack Query (React Query) for server state and Context API for global UI state.
-- **Mock/API Switching**: Environment-aware service factory allows development without a live backend.
-
-### Backend (FastAPI + SQLAlchemy)
-- **Layered Design**: Core -> API -> Services -> Models -> Repositories.
-- **Database**: PostgreSQL with asynchronous sessions using `asyncpg`.
-- **Security**: JWT-based authentication with Role-Based Access Control (RBAC).
-- **Observability**: Structured JSON logging and request tracing.
-
-## 🛠️ Technical Stack
-
-- **Frontend**: React, TypeScript, Tailwind CSS, TanStack Query, React Hook Form, Zod, Lucide React.
-- **Backend**: Python, FastAPI, SQLAlchemy 2.0, Pydantic V2, Structlog.
-- **Database**: PostgreSQL 15.
-- **Containerization**: Docker & Docker Compose.
-
-## 📖 Documentation
-
-Detailed engineering artifacts can be found in the `/docs` directory:
-- [System Design](./docs/system_design.md)
-- [Domain Model](./docs/domain_model.md)
-- [Database Design](./docs/database_design.md)
-- [Frontend State Architecture](./docs/frontend_state_architecture.md)
-- [Staff Portal Architecture](./docs/staff_portal_architecture.md)
+## 🌟 Project Highlights
+- **Atomic Design System**: 100+ reusable UI components built for consistency.
+- **Decision-Driven UX**: Workspaces designed for staff to make high-stakes operational decisions.
+- **Transactional Integrity**: Robust state machines for policy issuance and claim settlement.
+- **Observability-Ready**: Structured JSON logging with request tracing.
 
 ---
 
-## 🚦 Getting Started (Local Development)
+## 📽️ Interactive Demo
+Follow our [Detailed Demo Script](./docs/demo_script.md) to walk through the most critical user journeys.
 
-### 1. Clone the Repository
+---
+
+## 🏗️ Technical Architecture
+IMP is engineered for maintainability and scalability through clear separation of concerns.
+
+### [Read the Architecture Overview](./docs/architecture_overview.md)
+
+### Key Technologies
+- **Frontend**: React 18, TypeScript, Tailwind CSS, TanStack Query, React Hook Form.
+- **Backend**: Python 3.11, FastAPI, SQLAlchemy 2.0, Pydantic V2, Structlog.
+- **Database**: PostgreSQL 15.
+- **Containerization**: Docker & Docker Compose.
+
+---
+
+## 🚀 Key Modules
+
+### [Customer Portal](./docs/system_design.md#customer-portal)
+- **8-Step Purchase Wizard**: From eligibility to authorization.
+- **Claim Management**: Investigative case tracking.
+- **Financial Ledger**: Installment history and receipt vault.
+
+### [Staff Portal](./docs/staff_portal_architecture.md)
+- **Customer 360**: Unified workspace for identity and kyc.
+- **Claims Investigative**: Forensic-style evidence review and approval.
+- **Product Builder**: Version-controlled design of insurance offerings.
+- **BI Analytics**: Real-time business performance reporting.
+
+---
+
+## 🚦 Local Setup
+
+### 1. Clone & Initialize
 ```bash
 git clone https://github.com/pranalibuilds-gif/Insurance-Management-System
 cd Insurance-Management-System
@@ -68,27 +57,8 @@ cd Insurance-Management-System
 ```bash
 docker-compose up --build
 ```
-- Frontend: `http://localhost`
-- Backend API: `http://localhost:8000/docs`
 
-### 3. Manual Frontend Setup
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### 4. Manual Backend Setup
-```bash
-cd backend
-python -m venv venv
-source venv/bin/activate # or venv\Scripts\activate on Windows
-pip install -r requirements.txt
-uvicorn app.main:app --reload
-```
-
-### 5. Generate Demo Data (Optional)
-Populate the database with 4-6 years of simulated operational history:
+### 3. Generate Historical Demo Data
 ```bash
 cd backend
 python -m app.seeds.seed
@@ -96,16 +66,13 @@ python -m app.seeds.seed
 
 ---
 
-## 🔮 Future Expansion (Roadmap)
-
-While the current engineering milestone is complete, the architecture is designed to support:
-1. **Cloud-Native Storage**: Switch from `LocalStorageProvider` to `S3Provider` for scalable document management.
-2. **Automated Reminders**: Integrate `Celery` or `RQ` for background renewal notifications and claim SLA triggers.
-3. **Advanced Underwriting**: Expand the `ProductBuilder` to include complex rule-based pricing engines.
-4. **Mobile Experience**: Add React Native support by leveraging the unified `services/` layer.
-5. **Real-time Analytics**: Integrate `Socket.io` or FastAPI WebSockets for live operational dashboard updates.
+## 📖 Engineering Documentation
+- [Domain Model](./docs/domain_model.md)
+- [Database Schema](./docs/database_design.md)
+- [Frontend State Architecture](./docs/frontend_state_architecture.md)
+- [Known Limitations](./docs/known_limitations.md)
 
 ---
 
-**Release Version**: v1.0.0 (Engineering Finalized)
+**Release Version**: v1.0.0 (Engineering Freeze)
 **Author**: Pranali More
