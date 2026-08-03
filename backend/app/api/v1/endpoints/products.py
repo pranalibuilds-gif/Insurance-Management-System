@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.schemas.product import ProductRead, ProductCreate
 from app.services.product import ProductService
 from app.core.security.deps import RoleChecker
+from app.models.user import User
 from typing import List
 
 router = APIRouter()

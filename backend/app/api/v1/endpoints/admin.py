@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.schemas.admin import AuditLogRead, SystemConfigRead
 from app.core.security.deps import get_current_active_superuser
 from app.models.user import User
+from app.models.user import User
 from typing import List
 
 router = APIRouter()

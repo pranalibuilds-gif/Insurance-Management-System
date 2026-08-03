@@ -6,6 +6,7 @@ from app.services.claim import ClaimService
 from typing import List
 
 from app.core.security.deps import get_current_user, RoleChecker
+from app.models.user import User
 
 router = APIRouter()
 

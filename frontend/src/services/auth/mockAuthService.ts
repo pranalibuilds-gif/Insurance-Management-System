@@ -2,8 +2,11 @@ import { UserLogin, UserCreate, Token, UserRead } from '../../types/auth';
 import { IAuthService } from './authService';
 
 export class MockAuthService implements IAuthService {
+  private currentUserEmail: string = 'mock@example.com';
+
   async login(data: UserLogin): Promise<Token> {
     await new Promise((r) => setTimeout(r, 1000));
+    this.currentUserEmail = data.email;
     return {
       access_token: 'mock_token',
       token_type: 'bearer',
@@ -25,11 +28,26 @@ export class MockAuthService implements IAuthService {
 
   async getCurrentUser(): Promise<UserRead> {
     await new Promise((r) => setTimeout(r, 500));
+
+    let role = 'CUSTOMER';
+    let name = 'John Doe';
+
+    if (this.currentUserEmail.includes('admin')) {
+      role = 'ADMIN';
+      name = 'System Admin';
+    } else if (this.currentUserEmail.includes('manager')) {
+      role = 'MANAGER';
+      name = 'Mike Manager';
+    } else if (this.currentUserEmail.includes('agent')) {
+      role = 'AGENT';
+      name = 'Sarah Adjuster';
+    }
+
     return {
       id: 'mock_id',
-      email: 'mock@example.com',
-      full_name: 'Mock User',
-      role: 'CUSTOMER',
+      email: this.currentUserEmail,
+      full_name: name,
+      role: role,
       is_active: true,
       is_verified: true,
     };

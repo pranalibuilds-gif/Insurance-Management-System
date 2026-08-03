@@ -5,6 +5,7 @@ from app.schemas.customer import CustomerRead, CustomerUpdate
 from app.services.customer import CustomerService
 from app.core.security.deps import get_current_user
 from app.models.user import User
+from app.models.user import User
 
 router = APIRouter()
 

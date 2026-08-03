@@ -4,6 +4,7 @@ from app.core.database import get_db
 from app.schemas.notification import NotificationWorkspaceRead
 from app.core.security.deps import get_current_user
 from app.models.user import User
+from app.models.user import User
 
 router = APIRouter()
 
